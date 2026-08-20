@@ -1,0 +1,254 @@
+<template>
+  <MainLayout>
+    <div class="max-w-3xl space-y-6">
+      <div>
+        <h1 class="page-title">{{ isEdit ? 'แก้ไขเมนู' : 'เพิ่มเมนู' }}</h1>
+        <p class="text-gray-500 mt-1">ใส่สูตรวัตถุดิบ บรรจุภัณฑ์ และเมนูพ่วง — ระบบไม่แปลงหน่วยให้อัตโนมัติ</p>
+      </div>
+
+      <form class="card p-6 space-y-5" @submit.prevent="save">
+        <div class="grid sm:grid-cols-2 gap-4">
+          <div class="sm:col-span-2">
+            <label class="block text-sm font-medium mb-1">ชื่อเมนู *</label>
+            <input v-model="form.name" required class="input-field w-full" />
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-1">ประเภทหน่วยขาย *</label>
+            <select v-model="form.saleUnitType" class="input-field w-full" @change="applyPreset">
+              <option value="box">กล่อง (ราดข้าว)</option>
+              <option value="bag">มัดถุง (กับข้าว)</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-1">ราคาขาย (บาท) *</label>
+            <input v-model.number="form.sellingPrice" type="number" min="0" step="0.01" required class="input-field w-full" />
+          </div>
+          <div class="sm:col-span-2">
+            <label class="block text-sm font-medium mb-1">หมวดหมู่</label>
+            <input v-model="form.category" class="input-field w-full" placeholder="เช่น อาหารจานเดียว" />
+          </div>
+        </div>
+
+        <p v-if="missingLabels.length" class="text-sm text-yellow-800 bg-yellow-50 rounded-lg px-3 py-2">
+          ยังไม่พบบรรจุภัณฑ์มาตรฐาน: {{ missingLabels.join(', ') }} —
+          <router-link to="/packaging" class="underline">ไปเพิ่มที่หน้าบรรจุภัณฑ์</router-link>
+        </p>
+
+        <section class="space-y-3">
+          <h2 class="font-semibold">วัตถุดิบในสูตร</h2>
+          <div v-for="(line, index) in ingredientLines" :key="'ing-' + index" class="flex gap-2">
+            <select v-model="line.ingredientId" class="input-field flex-1">
+              <option value="">เลือกวัตถุดิบ...</option>
+              <option v-for="item in foodIngredients" :key="item.id" :value="item.id">
+                {{ item.name }} ({{ item.unit }})
+              </option>
+            </select>
+            <input v-model.number="line.quantityPerUnit" type="number" min="0" step="0.0001" class="input-field w-28" placeholder="ปริมาณ" />
+            <button type="button" class="text-red-600 text-sm" @click="ingredientLines.splice(index, 1)">ลบ</button>
+          </div>
+          <button type="button" class="text-primary-600 text-sm font-medium" @click="ingredientLines.push({ ingredientId: '', quantityPerUnit: 0 })">
+            + เพิ่มวัตถุดิบ
+          </button>
+        </section>
+
+        <section class="space-y-3">
+          <div class="flex justify-between items-center">
+            <h2 class="font-semibold">บรรจุภัณฑ์</h2>
+            <button type="button" class="text-sm text-primary-600" @click="applyPreset">ใช้ preset ตามประเภทขาย</button>
+          </div>
+          <div v-for="(line, index) in packagingLines" :key="'pkg-' + index" class="flex gap-2">
+            <select v-model="line.ingredientId" class="input-field flex-1">
+              <option value="">เลือกบรรจุภัณฑ์...</option>
+              <option v-for="item in packaging" :key="item.id" :value="item.id">
+                {{ item.name }} ({{ item.unit }})
+              </option>
+            </select>
+            <input v-model.number="line.quantityPerUnit" type="number" min="0" step="0.0001" class="input-field w-28" />
+            <button type="button" class="text-red-600 text-sm" @click="packagingLines.splice(index, 1)">ลบ</button>
+          </div>
+          <button type="button" class="text-primary-600 text-sm font-medium" @click="packagingLines.push({ ingredientId: '', quantityPerUnit: 1 })">
+            + เพิ่มบรรจุภัณฑ์
+          </button>
+        </section>
+
+        <section class="space-y-3">
+          <h2 class="font-semibold">เมนูพ่วง (เช่น ไข่ดาว)</h2>
+          <div v-for="(addon, index) in addons" :key="'add-' + index" class="flex gap-2">
+            <select v-model="addon.addonMenuItemId" class="input-field flex-1">
+              <option value="">เลือกเมนูพ่วง...</option>
+              <option v-for="menu in addonOptions" :key="menu.id" :value="menu.id">{{ menu.name }}</option>
+            </select>
+            <input v-model.number="addon.quantity" type="number" min="0.0001" step="0.0001" class="input-field w-24" />
+            <button type="button" class="text-red-600 text-sm" @click="addons.splice(index, 1)">ลบ</button>
+          </div>
+          <button type="button" class="text-primary-600 text-sm font-medium" @click="addons.push({ addonMenuItemId: '', quantity: 1 })">
+            + เพิ่มเมนูพ่วง
+          </button>
+        </section>
+
+        <div v-if="preview" class="bg-gray-50 rounded-lg p-4 text-sm space-y-1">
+          <p>ต้นทุนรวมโดยประมาณ: <strong>{{ formatCurrency(preview.totalCost) }}</strong></p>
+          <p>กำไรสุทธิโดยประมาณ: <strong :class="preview.netProfit < 0 ? 'text-red-600' : 'text-green-700'">{{ formatCurrency(preview.netProfit) }}</strong>
+            ({{ preview.netMarginPercent.toFixed(1) }}%)</p>
+        </div>
+
+        <div class="flex gap-3">
+          <button type="submit" class="btn-primary" :disabled="saving">{{ saving ? 'กำลังบันทึก...' : 'บันทึกเมนู' }}</button>
+          <router-link to="/menu" class="btn-secondary">ยกเลิก</router-link>
+        </div>
+      </form>
+    </div>
+  </MainLayout>
+</template>
+
+<script setup lang="ts">
+import { computed, onMounted, reactive, ref, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import MainLayout from '@/layouts/MainLayout.vue'
+import { useIngredients } from '@/composables/useIngredients'
+import { useMenu } from '@/composables/useMenu'
+import { useStoreSettings } from '@/composables/useStoreSettings'
+import { useToast } from '@/composables/useToast'
+import { calculateMenuCost } from '@/utils/costCalculator'
+import { getPackagingPresetLines, missingPresetLabels } from '@/utils/packagingPresets'
+import { formatCurrency } from '@/utils/format'
+import type { MenuItem, SaleUnitType } from '@/types/models'
+
+const route = useRoute()
+const router = useRouter()
+const { ingredients, fetchIngredients } = useIngredients()
+const { menuItems, fetchMenuItems, fetchMenuItemById, createMenuItem, updateMenuItem } = useMenu()
+const { settings, fetchSettings } = useStoreSettings()
+const { success, error } = useToast()
+
+const isEdit = computed(() => Boolean(route.params.id))
+const saving = ref(false)
+const appliedPreset = ref(false)
+
+const form = reactive({
+  name: '',
+  saleUnitType: 'box' as SaleUnitType,
+  sellingPrice: 0,
+  category: '',
+})
+
+const ingredientLines = ref<Array<{ ingredientId: string; quantityPerUnit: number }>>([
+  { ingredientId: '', quantityPerUnit: 0 },
+])
+const packagingLines = ref<Array<{ ingredientId: string; quantityPerUnit: number }>>([])
+const addons = ref<Array<{ addonMenuItemId: string; quantity: number }>>([])
+
+const foodIngredients = computed(() => ingredients.value.filter((i) => i.type === 'ingredient'))
+const packaging = computed(() => ingredients.value.filter((i) => i.type === 'packaging'))
+const addonOptions = computed(() =>
+  menuItems.value.filter((m) => m.id !== route.params.id),
+)
+const missingLabels = computed(() => missingPresetLabels(form.saleUnitType, packaging.value))
+
+const applyPreset = () => {
+  const lines = getPackagingPresetLines(form.saleUnitType, packaging.value)
+  if (lines.length) {
+    packagingLines.value = lines.map((line) => ({
+      ingredientId: line.ingredientId,
+      quantityPerUnit: line.quantityPerUnit,
+    }))
+    appliedPreset.value = true
+  }
+}
+
+const preview = computed(() => {
+  if (!settings.value) return null
+  const draft: MenuItem = {
+    id: 'draft',
+    userId: '',
+    name: form.name || 'draft',
+    saleUnitType: form.saleUnitType,
+    sellingPrice: form.sellingPrice || 0,
+    isActive: true,
+    createdAt: '',
+    updatedAt: '',
+    recipeLines: [...ingredientLines.value, ...packagingLines.value]
+      .filter((l) => l.ingredientId && l.quantityPerUnit > 0)
+      .map((l, i) => ({
+        id: String(i),
+        menuItemId: 'draft',
+        ingredientId: l.ingredientId,
+        quantityPerUnit: l.quantityPerUnit,
+        createdAt: '',
+      })),
+    addons: addons.value
+      .filter((a) => a.addonMenuItemId)
+      .map((a, i) => ({
+        id: String(i),
+        menuItemId: 'draft',
+        addonMenuItemId: a.addonMenuItemId,
+        quantity: a.quantity,
+        createdAt: '',
+      })),
+  }
+  try {
+    return calculateMenuCost(draft, settings.value, ingredients.value, menuItems.value)
+  } catch {
+    return null
+  }
+})
+
+const save = async () => {
+  saving.value = true
+  try {
+    const payload = {
+      name: form.name,
+      saleUnitType: form.saleUnitType,
+      sellingPrice: form.sellingPrice,
+      category: form.category || undefined,
+      recipeLines: [...ingredientLines.value, ...packagingLines.value].filter(
+        (l) => l.ingredientId && l.quantityPerUnit > 0,
+      ),
+      addons: addons.value.filter((a) => a.addonMenuItemId && a.quantity > 0),
+    }
+    if (isEdit.value) {
+      await updateMenuItem(String(route.params.id), payload)
+      success('บันทึกเมนูแล้ว')
+      router.push(`/menu/${route.params.id}`)
+    } else {
+      const created = await createMenuItem(payload)
+      success('สร้างเมนูแล้ว')
+      router.push(created ? `/menu/${created.id}` : '/menu')
+    }
+  } catch (e: unknown) {
+    error(e instanceof Error ? e.message : 'บันทึกไม่สำเร็จ')
+  } finally {
+    saving.value = false
+  }
+}
+
+watch(
+  () => packaging.value.length,
+  () => {
+    if (!isEdit.value && !appliedPreset.value && packaging.value.length) applyPreset()
+  },
+)
+
+onMounted(async () => {
+  await Promise.all([fetchIngredients(), fetchMenuItems(), fetchSettings()])
+  if (isEdit.value) {
+    const menu = await fetchMenuItemById(String(route.params.id))
+    form.name = menu.name
+    form.saleUnitType = menu.saleUnitType
+    form.sellingPrice = menu.sellingPrice
+    form.category = menu.category || ''
+    ingredientLines.value = (menu.recipeLines || [])
+      .filter((l) => l.ingredient?.type !== 'packaging')
+      .map((l) => ({ ingredientId: l.ingredientId, quantityPerUnit: l.quantityPerUnit }))
+    packagingLines.value = (menu.recipeLines || [])
+      .filter((l) => l.ingredient?.type === 'packaging')
+      .map((l) => ({ ingredientId: l.ingredientId, quantityPerUnit: l.quantityPerUnit }))
+    addons.value = (menu.addons || []).map((a) => ({
+      addonMenuItemId: a.addonMenuItemId,
+      quantity: a.quantity,
+    }))
+    if (!ingredientLines.value.length) ingredientLines.value = [{ ingredientId: '', quantityPerUnit: 0 }]
+    appliedPreset.value = true
+  }
+})
+</script>
