@@ -14,7 +14,7 @@ const COMBO_SELECT = `
         *,
         ingredient:ingredients (*)
       ),
-      menu_addons (
+      menu_addons:menu_addons!menu_addons_menu_item_id_fkey (
         *,
         addon_menu_item:menu_items!addon_menu_item_id (
           *,
