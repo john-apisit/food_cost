@@ -1,0 +1,2 @@
+-- Optional seed data for local development.
+-- Applied after migrations on `supabase db reset` and `supabase start`.
