@@ -44,7 +44,7 @@ export function mapIngredient(row: Record<string, unknown>): Ingredient {
     name: String(row.name),
     unit: String(row.unit),
     pricePerUnit: num(row.price_per_unit),
-    type: row.type === 'packaging' ? 'packaging' : 'ingredient',
+    type: String(row.type).trim() === 'packaging' ? 'packaging' : 'ingredient',
     category: optStr(row.category),
     supplier: optStr(row.supplier),
     notes: optStr(row.notes),

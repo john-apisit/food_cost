@@ -48,9 +48,10 @@
             <div>
               <label class="block text-sm font-medium mb-1">โน้ตสถานะ</label>
               <textarea
+                ref="statusNoteField"
                 v-model="form.statusNote"
                 rows="2"
-                class="input-field w-full"
+                class="input-field w-full resize-none overflow-hidden"
                 :placeholder="statusNotePlaceholder"
               ></textarea>
             </div>
@@ -191,7 +192,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, reactive, ref, watch } from 'vue'
+import { computed, nextTick, onMounted, reactive, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import MainLayout from '@/layouts/MainLayout.vue'
 import MenuImage from '@/components/menu/MenuImage.vue'
@@ -261,6 +262,21 @@ const statusNotePlaceholder = computed(() => {
   if (form.status === 'discontinued') return 'เช่น วัตถุดิบหายาก หรือขายไม่คุ้ม'
   return 'เช่น ยังขาดวัตถุดิบ รอทดสอบรสชาติ หรือสูตรยังไม่นิ่ง'
 })
+
+const statusNoteField = ref<HTMLTextAreaElement | null>(null)
+
+const resizeStatusNote = () => {
+  const el = statusNoteField.value
+  if (!el) return
+  el.style.height = 'auto'
+  el.style.height = `${el.scrollHeight}px`
+}
+
+watch(
+  () => form.statusNote,
+  () => nextTick(resizeStatusNote),
+  { flush: 'post' },
+)
 
 usePageTitle(
   computed(() => {
@@ -422,6 +438,8 @@ onMounted(async () => {
       quantity: a.quantity,
     }))
     appliedPreset.value = true
+    await nextTick()
+    resizeStatusNote()
   }
 })
 </script>
