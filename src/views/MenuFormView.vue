@@ -65,7 +65,7 @@
         <section class="space-y-4">
           <div class="flex flex-col sm:flex-row sm:items-baseline sm:justify-between gap-1">
             <h2 class="font-semibold">วัตถุดิบในสูตร</h2>
-            <p class="text-xs text-gray-500">ต้นทุน = ปริมาณ × ราคาต่อหน่วย</p>
+            <p class="text-xs text-gray-400">ต้นทุน = ปริมาณ × ราคาต่อหน่วย</p>
           </div>
           <div class="grid lg:grid-cols-2 gap-4">
             <div
@@ -75,7 +75,7 @@
             >
               <div class="flex items-baseline justify-between gap-3">
                 <h3 class="text-sm font-medium text-gray-700">{{ cat }}</h3>
-                <p v-if="categoryLineCost(cat) > 0" class="text-xs text-gray-500">
+                <p v-if="categoryLineCost(cat) > 0" class="text-xs text-gray-400">
                   {{ formatCurrency(categoryLineCost(cat)) }}
                 </p>
               </div>
@@ -98,7 +98,7 @@
                   class="input-field w-24 shrink-0"
                   placeholder="ปริมาณ"
                 />
-                <span class="w-24 shrink-0 text-right text-sm tabular-nums text-gray-700">
+                <span class="w-24 shrink-0 text-right text-xs tabular-nums text-gray-400">
                   {{ line.ingredientId ? formatCurrency(recipeLineCost(line)) : '—' }}
                 </span>
                 <button type="button" class="text-red-600 text-sm shrink-0" @click="removeIngredientLine(cat, index)">
@@ -126,7 +126,7 @@
                 </option>
               </select>
               <input v-model.number="line.quantityPerUnit" type="number" min="0" step="0.0001" class="input-field w-24 shrink-0" />
-              <span class="w-24 shrink-0 text-right text-sm tabular-nums text-gray-700">
+              <span class="w-24 shrink-0 text-right text-xs tabular-nums text-gray-400">
                 {{ line.ingredientId ? formatCurrency(recipeLineCost(line)) : '—' }}
               </span>
               <button type="button" class="text-red-600 text-sm shrink-0" @click="packagingLines.splice(index, 1)">ลบ</button>
