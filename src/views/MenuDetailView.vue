@@ -118,6 +118,7 @@ import { useRoute } from 'vue-router'
 import MainLayout from '@/layouts/MainLayout.vue'
 import MenuImage from '@/components/menu/MenuImage.vue'
 import { useCostBreakdown } from '@/composables/useCostBreakdown'
+import { usePageTitle } from '@/composables/usePageTitle'
 import { calculateSuggestedPrice, simulateSellingPrice } from '@/utils/costCalculator'
 import { formatCurrency, formatNumber, saleUnitLabel } from '@/utils/format'
 
@@ -128,6 +129,8 @@ const whatIfPrice = ref(0)
 const breakdown = computed(() =>
   breakdowns.value.find((b) => b.menuItem.id === route.params.id),
 )
+
+usePageTitle(computed(() => breakdown.value?.menuItem.name || 'เมนู'))
 
 const display = computed(() => breakdown.value!)
 

@@ -145,6 +145,7 @@ import MainLayout from '@/layouts/MainLayout.vue'
 import MenuImage from '@/components/menu/MenuImage.vue'
 import { useIngredients } from '@/composables/useIngredients'
 import { useMenu } from '@/composables/useMenu'
+import { usePageTitle } from '@/composables/usePageTitle'
 import { useStoreSettings } from '@/composables/useStoreSettings'
 import { useToast } from '@/composables/useToast'
 import { calculateMenuCost } from '@/utils/costCalculator'
@@ -188,6 +189,14 @@ const form = reactive({
   category: '',
   imageUrl: '',
 })
+
+usePageTitle(
+  computed(() => {
+    if (!isEdit.value) return 'เพิ่มเมนู'
+    const name = form.name.trim()
+    return name ? `แก้ไข ${name}` : 'แก้ไขเมนู'
+  }),
+)
 
 const ingredientLinesByCategory = ref(emptyGroupedLines())
 const packagingLines = ref<RecipeLineDraft[]>([])
