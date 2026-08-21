@@ -31,6 +31,12 @@
               <X v-if="mobileOpen" class="h-6 w-6" />
               <Menu v-else class="h-6 w-6" />
             </button>
+            <router-link
+              to="/profile"
+              class="hidden sm:inline-flex items-center max-w-[10rem] truncate text-gray-500 hover:text-gray-700 text-sm font-medium"
+            >
+              {{ profileLabel }}
+            </router-link>
             <button
               type="button"
               class="hidden sm:inline text-gray-500 hover:text-gray-700 text-sm font-medium"
@@ -54,6 +60,14 @@
           >
             {{ item.label }}
           </router-link>
+          <router-link
+            to="/profile"
+            class="block rounded-lg px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+            active-class="bg-primary-50 text-primary-700"
+            @click="mobileOpen = false"
+          >
+            โปรไฟล์
+          </router-link>
           <button
             type="button"
             class="block w-full text-left rounded-lg px-3 py-2 text-sm font-medium text-red-600"
@@ -72,14 +86,16 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { Menu, X } from 'lucide-vue-next'
 import { useAuth } from '@/composables/useAuth'
 
 const router = useRouter()
-const { signOut } = useAuth()
+const { signOut, user, displayName } = useAuth()
 const mobileOpen = ref(false)
+
+const profileLabel = computed(() => displayName.value || user.value?.email || 'โปรไฟล์')
 
 const navItems = [
   { label: 'หน้าแรก', to: '/dashboard' },

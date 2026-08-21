@@ -11,6 +11,18 @@ const router = createRouter({
       component: () => import('@/views/auth/LoginView.vue'),
       meta: { requiresGuest: true },
     },
+    {
+      path: '/forgot-password',
+      name: 'ForgotPassword',
+      component: () => import('@/views/auth/ForgotPasswordView.vue'),
+      meta: { requiresGuest: true },
+    },
+    {
+      path: '/reset-password',
+      name: 'ResetPassword',
+      component: () => import('@/views/auth/ResetPasswordView.vue'),
+      meta: { requiresAuth: true },
+    },
     { path: '/', redirect: '/dashboard' },
     {
       path: '/dashboard',
@@ -84,11 +96,23 @@ const router = createRouter({
       component: () => import('@/views/SettingsView.vue'),
       meta: { requiresAuth: true },
     },
+    {
+      path: '/profile',
+      name: 'Profile',
+      component: () => import('@/views/ProfileView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/change-password',
+      name: 'ChangePassword',
+      component: () => import('@/views/ChangePasswordView.vue'),
+      meta: { requiresAuth: true },
+    },
   ],
 })
 
 router.beforeEach(async (to, _from, next) => {
-  const { isAuthenticated, loading } = useAuth()
+  const { isAuthenticated, isPasswordRecovery, loading } = useAuth()
 
   if (loading.value) {
     await new Promise<void>((resolve) => {
@@ -99,6 +123,11 @@ router.beforeEach(async (to, _from, next) => {
         }
       })
     })
+  }
+
+  if (isPasswordRecovery.value && isAuthenticated.value && to.name !== 'ResetPassword') {
+    next({ name: 'ResetPassword' })
+    return
   }
 
   if (to.meta.requiresAuth && !isAuthenticated.value) {
