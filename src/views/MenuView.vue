@@ -26,15 +26,20 @@
         <router-link to="/menu/new" class="btn-primary">เพิ่มเมนูแรก</router-link>
       </EmptyState>
 
-      <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <article v-for="menu in filtered" :key="menu.id" class="card overflow-hidden flex flex-col">
-          <router-link :to="`/menu/${menu.id}`" class="block hover:opacity-90">
-            <MenuImage :src="menu.imageUrl" :alt="menu.name" />
+      <div v-else class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <article v-for="menu in filtered" :key="menu.id" class="card overflow-hidden flex">
+          <router-link :to="`/menu/${menu.id}`" class="block shrink-0 p-3 hover:opacity-90">
+            <MenuImage
+              :src="menu.imageUrl"
+              :alt="menu.name"
+              wrapper-class="aspect-square w-28 sm:w-36 rounded-xl"
+              icon-class="h-6 w-6"
+            />
           </router-link>
-          <div class="p-5 space-y-3 flex-1 flex flex-col">
+          <div class="p-4 space-y-2 flex-1 min-w-0 flex flex-col">
             <div class="flex justify-between gap-3">
-              <div>
-                <h2 class="font-bold text-lg">{{ menu.name }}</h2>
+              <div class="min-w-0">
+                <h2 class="font-bold text-lg leading-snug">{{ menu.name }}</h2>
                 <p v-if="menu.description" class="mt-0.5 text-sm text-gray-600 line-clamp-2">{{ menu.description }}</p>
                 <p class="text-sm text-gray-500">{{ menu.category || 'ไม่มีหมวดหมู่' }}</p>
               </div>
@@ -50,7 +55,7 @@
                 </span>
               </div>
             </div>
-            <p v-if="menu.statusNote" class="text-sm text-gray-500" :title="menu.statusNote">
+            <p v-if="menu.statusNote" class="text-sm text-gray-500 line-clamp-1" :title="menu.statusNote">
               {{ menu.statusNote }}
             </p>
             <p class="text-sm">ราคาขาย <span class="font-semibold">{{ formatCurrency(menu.sellingPrice) }}</span></p>
