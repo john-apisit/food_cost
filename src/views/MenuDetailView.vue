@@ -53,23 +53,38 @@
       </div>
 
       <div class="grid lg:grid-cols-2 gap-6">
-        <section class="card p-5 space-y-3">
+        <section class="card p-5 space-y-4">
           <h2 class="font-bold">วัตถุดิบ</h2>
-          <table class="w-full text-sm">
-            <tbody>
-              <tr v-for="line in display.ingredientDetails" :key="line.ingredient.id" class="border-b">
-                <td class="py-2">{{ line.ingredient.name }}</td>
-                <td class="py-2 text-right text-gray-500">{{ formatNumber(line.quantity) }} {{ line.ingredient.unit }}</td>
-                <td class="py-2 text-right">{{ formatCurrency(line.cost) }}</td>
-              </tr>
-            </tbody>
-            <tfoot>
-              <tr class="font-semibold">
-                <td class="pt-2" colspan="2">รวมวัตถุดิบ</td>
-                <td class="pt-2 text-right">{{ formatCurrency(display.ingredientCost) }}</td>
-              </tr>
-            </tfoot>
-          </table>
+          <div
+            v-for="group in groupedIngredientDetails"
+            :key="group.category"
+            class="space-y-1 rounded-lg border border-gray-100 bg-gray-50/60 p-3"
+          >
+            <div class="flex items-baseline justify-between gap-3">
+              <h3 class="text-sm font-medium text-gray-700">{{ group.category }}</h3>
+              <p class="text-xs text-gray-500">{{ group.lines.length }} รายการ</p>
+            </div>
+            <table class="w-full text-sm">
+              <tbody>
+                <tr v-for="line in group.lines" :key="line.ingredient.id" class="border-b border-gray-200">
+                  <td class="py-2">{{ line.ingredient.name }}</td>
+                  <td class="py-2 text-right text-gray-500">{{ formatNumber(line.quantity) }} {{ line.ingredient.unit }}</td>
+                  <td class="py-2 text-right">{{ formatCurrency(line.cost) }}</td>
+                </tr>
+              </tbody>
+              <tfoot>
+                <tr class="text-gray-600">
+                  <td class="pt-2" colspan="2">รวม{{ group.category }}</td>
+                  <td class="pt-2 text-right">{{ formatCurrency(group.subtotal) }}</td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+          <p v-if="!groupedIngredientDetails.length" class="text-sm text-gray-500">ยังไม่มีวัตถุดิบในสูตร</p>
+          <div class="flex justify-between text-sm font-semibold pt-1">
+            <span>รวมวัตถุดิบ</span>
+            <span>{{ formatCurrency(display.ingredientCost) }}</span>
+          </div>
         </section>
 
         <section class="card p-5 space-y-3">
@@ -121,6 +136,11 @@ import { useCostBreakdown } from '@/composables/useCostBreakdown'
 import { usePageTitle } from '@/composables/usePageTitle'
 import { calculateSuggestedPrice, simulateSellingPrice } from '@/utils/costCalculator'
 import { formatCurrency, formatNumber, saleUnitLabel } from '@/utils/format'
+import {
+  INGREDIENT_CATEGORIES,
+  isOtherIngredientCategory,
+  type IngredientCategory,
+} from '@/types/models'
 
 const route = useRoute()
 const { breakdowns, loading, loadAll, settings } = useCostBreakdown()
@@ -133,6 +153,21 @@ const breakdown = computed(() =>
 usePageTitle(computed(() => breakdown.value?.menuItem.name || 'เมนู'))
 
 const display = computed(() => breakdown.value!)
+
+const categoryOf = (category?: string): IngredientCategory =>
+  isOtherIngredientCategory(category) ? 'อื่นๆ' : (category as IngredientCategory)
+
+const groupedIngredientDetails = computed(() => {
+  const lines = breakdown.value?.ingredientDetails ?? []
+  return INGREDIENT_CATEGORIES.map((category) => {
+    const grouped = lines.filter((line) => categoryOf(line.ingredient.category) === category)
+    return {
+      category,
+      lines: grouped,
+      subtotal: grouped.reduce((sum, line) => sum + line.cost, 0),
+    }
+  }).filter((group) => group.lines.length > 0)
+})
 
 const priceSim = computed(() => {
   if (!breakdown.value || !settings.value) return breakdown.value!
