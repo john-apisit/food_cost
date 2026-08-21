@@ -1,10 +1,54 @@
 <template>
   <MainLayout>
-    <div class="space-y-6">
-      <div>
-        <h1 class="page-title">หน้าแรก</h1>
-        <p class="text-gray-500 mt-1">สรุปต้นทุน กำไร และสิ่งที่ต้องแก้ก่อนขาย</p>
+    <template #banner>
+      <div class="bg-gray-50">
+        <div class="h-40 sm:h-52 lg:h-60 overflow-hidden bg-gradient-to-r from-primary-700 via-primary-500 to-primary-400">
+          <img
+            v-if="settings?.bannerUrl && !bannerBroken"
+            :src="settings.bannerUrl"
+            alt=""
+            class="h-full w-full object-cover"
+            loading="lazy"
+            referrerpolicy="no-referrer"
+            @error="bannerBroken = true"
+          />
+        </div>
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div class="flex items-start gap-4 sm:gap-5 -mt-20 sm:-mt-24 pb-5">
+            <div class="h-40 w-40 sm:h-48 sm:w-48 rounded-xl border-4 border-white shadow-md overflow-hidden bg-white shrink-0">
+              <img
+                v-if="settings?.logoUrl && !logoBroken"
+                :src="settings.logoUrl"
+                :alt="storeTitle"
+                class="h-full w-full object-cover"
+                loading="lazy"
+                referrerpolicy="no-referrer"
+                @error="logoBroken = true"
+              />
+              <div
+                v-else
+                class="flex h-full w-full items-center justify-center bg-primary-50 text-primary-600"
+              >
+                <span v-if="storeInitial" class="text-4xl font-bold leading-none">{{ storeInitial }}</span>
+                <Store v-else class="h-16 w-16" />
+              </div>
+            </div>
+            <div class="min-w-0 flex-1 pt-20 sm:pt-24">
+              <h1 class="page-title truncate">{{ storeTitle }}</h1>
+              <p
+                v-if="settings?.storeDescription"
+                class="text-gray-600 mt-1 whitespace-pre-line"
+              >
+                {{ settings.storeDescription }}
+              </p>
+              <p v-else class="text-gray-500 mt-1">สรุปต้นทุน กำไร และสิ่งที่ต้องแก้ก่อนขาย</p>
+            </div>
+          </div>
+        </div>
       </div>
+    </template>
+
+    <div class="space-y-6">
 
       <div v-if="loading" class="text-gray-500">กำลังโหลด...</div>
 
@@ -69,8 +113,9 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
+import { Store } from 'lucide-vue-next'
 import MainLayout from '@/layouts/MainLayout.vue'
 import MenuComparisonTable from '@/components/comparison/MenuComparisonTable.vue'
 import { useCostBreakdown } from '@/composables/useCostBreakdown'
@@ -84,6 +129,28 @@ const { notifications } = useNotifications(
   () => breakdowns.value,
   () => settings.value,
 )
+
+const bannerBroken = ref(false)
+const logoBroken = ref(false)
+
+watch(
+  () => settings.value?.bannerUrl,
+  () => {
+    bannerBroken.value = false
+  },
+)
+watch(
+  () => settings.value?.logoUrl,
+  () => {
+    logoBroken.value = false
+  },
+)
+
+const storeTitle = computed(() => settings.value?.storeName?.trim() || 'หน้าแรก')
+const storeInitial = computed(() => {
+  const name = settings.value?.storeName?.trim()
+  return name ? Array.from(name)[0] : ''
+})
 
 const ingredientCount = computed(() => ingredients.value.filter((i) => i.type === 'ingredient').length)
 const avgMargin = computed(() => {

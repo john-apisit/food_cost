@@ -79,22 +79,29 @@
       </div>
     </nav>
 
-    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+    <slot name="banner" />
+
+    <main
+      class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-6 sm:pb-8"
+      :class="hasBanner ? 'pt-2 sm:pt-3' : 'pt-6 sm:pt-8'"
+    >
       <slot />
     </main>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, useSlots } from 'vue'
 import { useRouter } from 'vue-router'
 import { Menu, X } from 'lucide-vue-next'
 import { useAuth } from '@/composables/useAuth'
 
 const router = useRouter()
+const slots = useSlots()
 const { signOut, user, displayName } = useAuth()
 const mobileOpen = ref(false)
 
+const hasBanner = computed(() => Boolean(slots.banner))
 const profileLabel = computed(() => displayName.value || user.value?.email || 'โปรไฟล์')
 
 const navItems = [
