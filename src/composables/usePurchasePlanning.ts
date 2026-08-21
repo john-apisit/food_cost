@@ -1,4 +1,34 @@
-import type { Ingredient, MenuItem, PurchaseItem } from '@/types/models'
+import type { Ingredient, MenuItem, PurchaseItem, PurchaseSupplierGroup } from '@/types/models'
+
+export const UNSPECIFIED_SUPPLIER = 'ไม่ระบุซัพพลายเออร์'
+
+export function supplierLabel(supplier?: string | null): string {
+  const trimmed = supplier?.trim()
+  return trimmed || UNSPECIFIED_SUPPLIER
+}
+
+export function groupPurchaseItemsBySupplier(items: PurchaseItem[]): PurchaseSupplierGroup[] {
+  const map = new Map<string, PurchaseItem[]>()
+
+  for (const item of items) {
+    const key = supplierLabel(item.ingredient.supplier)
+    const list = map.get(key)
+    if (list) list.push(item)
+    else map.set(key, [item])
+  }
+
+  return Array.from(map.entries())
+    .map(([supplier, groupItems]) => ({
+      supplier,
+      items: groupItems,
+      totalCost: groupItems.reduce((sum, item) => sum + item.totalCost, 0),
+    }))
+    .sort((a, b) => {
+      if (a.supplier === UNSPECIFIED_SUPPLIER) return 1
+      if (b.supplier === UNSPECIFIED_SUPPLIER) return -1
+      return a.supplier.localeCompare(b.supplier, 'th')
+    })
+}
 
 export function usePurchasePlanning() {
   const calculatePurchaseList = (

@@ -163,6 +163,12 @@ export interface PurchaseItem {
   }>
 }
 
+export interface PurchaseSupplierGroup {
+  supplier: string
+  items: PurchaseItem[]
+  totalCost: number
+}
+
 export interface SalesRecord {
   id: string
   userId: string

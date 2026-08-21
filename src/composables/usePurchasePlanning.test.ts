@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest'
-import { usePurchasePlanning } from '@/composables/usePurchasePlanning'
-import type { Ingredient, MenuItem } from '@/types/models'
+import {
+  UNSPECIFIED_SUPPLIER,
+  groupPurchaseItemsBySupplier,
+  usePurchasePlanning,
+} from '@/composables/usePurchasePlanning'
+import type { Ingredient, MenuItem, PurchaseItem } from '@/types/models'
 
 const pork: Ingredient = {
   id: 'i1',
@@ -58,5 +62,42 @@ describe('purchase planning', () => {
     expect(porkLine?.totalCost).toBe(3750)
     expect(boxLine?.totalQuantity).toBe(250)
     expect(boxLine?.totalCost).toBe(1000)
+  })
+
+  it('groups purchase items by supplier and puts unspecified last', () => {
+    const makroPork: PurchaseItem = {
+      ingredient: { ...pork, supplier: 'Makro' },
+      totalQuantity: 2,
+      totalCost: 300,
+      fromMenus: [],
+    }
+    const marketVeg: PurchaseItem = {
+      ingredient: { ...pork, id: 'i2', name: 'กะหล่ำ', supplier: 'ตลาดสด' },
+      totalQuantity: 1,
+      totalCost: 40,
+      fromMenus: [],
+    }
+    const unnamedBox: PurchaseItem = {
+      ingredient: { ...box, supplier: '  ' },
+      totalQuantity: 10,
+      totalCost: 40,
+      fromMenus: [],
+    }
+    const makroRice: PurchaseItem = {
+      ingredient: { ...pork, id: 'i3', name: 'ข้าว', supplier: 'Makro' },
+      totalQuantity: 5,
+      totalCost: 200,
+      fromMenus: [],
+    }
+
+    const groups = groupPurchaseItemsBySupplier([makroPork, marketVeg, unnamedBox, makroRice])
+    const byName = Object.fromEntries(groups.map((g) => [g.supplier, g]))
+
+    expect(groups.map((g) => g.supplier)).toEqual(['ตลาดสด', 'Makro', UNSPECIFIED_SUPPLIER])
+    expect(byName.Makro.items).toHaveLength(2)
+    expect(byName.Makro.totalCost).toBe(500)
+    expect(byName['ตลาดสด'].totalCost).toBe(40)
+    expect(byName[UNSPECIFIED_SUPPLIER].totalCost).toBe(40)
+    expect(groups.at(-1)?.supplier).toBe(UNSPECIFIED_SUPPLIER)
   })
 })
