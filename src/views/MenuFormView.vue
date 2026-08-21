@@ -287,11 +287,12 @@ const save = async () => {
     if (isEdit.value) {
       await updateMenuItem(String(route.params.id), payload)
       success('บันทึกเมนูแล้ว')
-      router.push(`/menu/${route.params.id}`)
     } else {
       const created = await createMenuItem(payload)
       success('สร้างเมนูแล้ว')
-      router.push(created ? `/menu/${created.id}` : '/menu')
+      if (created) {
+        await router.replace(`/menu/${created.id}/edit`)
+      }
     }
   } catch (e: unknown) {
     error(e instanceof Error ? e.message : 'บันทึกไม่สำเร็จ')
