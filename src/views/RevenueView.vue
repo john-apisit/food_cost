@@ -4,7 +4,7 @@
       <div>
         <h1 class="page-title">ประมาณการรายได้</h1>
         <p class="text-gray-500 mt-1">
-          ใส่จำนวนที่ขายได้เฉลี่ยต่อวัน แล้วดูรายได้ต่อเดือนทันที — ตัวเลขไม่ถูกบันทึก
+          ใส่จำนวนที่ขายได้เฉลี่ยต่อวัน แล้วดูรายได้ต่อเดือนทันที — จำนวนถูกจำไว้ในเบราว์เซอร์นี้
         </p>
       </div>
 
@@ -63,11 +63,11 @@
           </select>
           <button
             type="button"
-            class="text-sm text-primary-600 font-medium"
+            class="btn-secondary text-sm"
             :disabled="!hasQty"
             @click="clearQty"
           >
-            ล้างจำนวนทั้งหมด
+            ล้างจำนวน
           </button>
         </div>
 
@@ -125,9 +125,11 @@
                       :value="qtyByMenuId[row.breakdown.menuItem.id] ?? ''"
                       type="number"
                       min="0"
-                      step="0.1"
+                      step="1"
+                      inputmode="numeric"
                       class="input-field w-24 text-right ml-auto"
                       :placeholder="saleUnitLabel(row.breakdown.menuItem.saleUnitType)"
+                      @keydown="onQtyKeydown"
                       @input="onQtyInput(row.breakdown.menuItem.id, $event)"
                     />
                   </td>
@@ -165,10 +167,11 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, reactive, ref } from 'vue'
+import { computed, onMounted, reactive, ref, watch } from 'vue'
 import MainLayout from '@/layouts/MainLayout.vue'
 import EmptyState from '@/components/common/EmptyState.vue'
 import MenuImage from '@/components/menu/MenuImage.vue'
+import { useAuth } from '@/composables/useAuth'
 import { useCostBreakdown } from '@/composables/useCostBreakdown'
 import { formatCurrency, formatNumber, saleUnitLabel } from '@/utils/format'
 import {
@@ -177,10 +180,17 @@ import {
   monthlyOpenDays,
   summarizeRevenueForecast,
 } from '@/utils/revenueForecast'
+import {
+  clearRevenueQtyCache,
+  loadRevenueQtyCache,
+  saveRevenueQtyCache,
+} from '@/utils/revenueQtyCache'
 
+const { user } = useAuth()
 const { breakdowns, loading, loadAll, settings } = useCostBreakdown()
 const qtyByMenuId = reactive<Record<string, number>>({})
 const filterStatus = ref<'ready_to_sell' | ''>('ready_to_sell')
+const cacheReady = ref(false)
 
 const days = computed(() => monthlyOpenDays(settings.value?.openDays ?? []))
 const openDaysLabel = computed(() => formatOpenDaysLabel(settings.value?.openDays ?? []))
@@ -203,9 +213,22 @@ const rows = computed(() =>
 
 const summary = computed(() => summarizeRevenueForecast(rows.value))
 const hasQty = computed(() => Object.values(qtyByMenuId).some((qty) => qty > 0))
+const userId = computed(() => user.value?.id ?? '')
+
+function replaceQty(next: Record<string, number>) {
+  Object.keys(qtyByMenuId).forEach((id) => {
+    delete qtyByMenuId[id]
+  })
+  Object.assign(qtyByMenuId, next)
+}
+
+function persistQty() {
+  if (!cacheReady.value || !userId.value) return
+  saveRevenueQtyCache(userId.value, { ...qtyByMenuId })
+}
 
 function setQty(menuId: string, raw: string) {
-  const value = Number(raw)
+  const value = Number.parseInt(raw, 10)
   if (raw === '' || !Number.isFinite(value) || value <= 0) {
     delete qtyByMenuId[menuId]
     return
@@ -213,17 +236,30 @@ function setQty(menuId: string, raw: string) {
   qtyByMenuId[menuId] = value
 }
 
+function onQtyKeydown(event: KeyboardEvent) {
+  if (['.', ',', 'e', 'E', '+', '-'].includes(event.key)) {
+    event.preventDefault()
+  }
+}
+
 function onQtyInput(menuId: string, event: Event) {
   const target = event.target
   if (!(target instanceof HTMLInputElement)) return
   setQty(menuId, target.value)
+  const stored = qtyByMenuId[menuId]
+  target.value = stored != null ? String(stored) : ''
 }
 
 function clearQty() {
-  Object.keys(qtyByMenuId).forEach((id) => {
-    delete qtyByMenuId[id]
-  })
+  replaceQty({})
+  if (userId.value) clearRevenueQtyCache(userId.value)
 }
 
-onMounted(() => loadAll())
+watch(qtyByMenuId, persistQty, { deep: true })
+
+onMounted(async () => {
+  await loadAll()
+  if (userId.value) replaceQty(loadRevenueQtyCache(userId.value))
+  cacheReady.value = true
+})
 </script>

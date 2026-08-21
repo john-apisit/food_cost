@@ -51,7 +51,7 @@ export function forecastMenuRevenue(
   avgDailyQty: number,
   days: number,
 ): RevenueForecastLine {
-  const qtyPerDay = Number.isFinite(avgDailyQty) && avgDailyQty > 0 ? avgDailyQty : 0
+  const qtyPerDay = Number.isFinite(avgDailyQty) ? Math.max(0, Math.trunc(avgDailyQty)) : 0
   const openDays = Number.isFinite(days) && days > 0 ? days : 0
   const monthlyQty = qtyPerDay * openDays
 

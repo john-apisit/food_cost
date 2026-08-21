@@ -107,6 +107,13 @@ describe('forecastMenuRevenue', () => {
     expect(forecastMenuRevenue(breakdown, -5, 30).grossRevenue).toBe(0)
     expect(forecastMenuRevenue(breakdown, Number.NaN, 30).grossRevenue).toBe(0)
   })
+
+  it('uses whole units only', () => {
+    const breakdown = calculateMenuCost(basilPork, settings, [pork, box], [basilPork])
+    const line = forecastMenuRevenue(breakdown, 12.9, 30)
+    expect(line.avgDailyQty).toBe(12)
+    expect(line.monthlyQty).toBe(360)
+  })
 })
 
 describe('summarizeRevenueForecast', () => {
