@@ -111,6 +111,7 @@ const navItems = [
   { label: 'เมนู', to: '/menu' },
   { label: 'เปรียบเทียบ', to: '/comparison' },
   { label: 'วางแผนซื้อ', to: '/planning' },
+  { label: 'รายได้', to: '/revenue' },
   { label: 'ชุดโปร', to: '/combos' },
   { label: 'ยอดขาย', to: '/sales' },
   { label: 'ตั้งค่า', to: '/settings' },

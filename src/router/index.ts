@@ -86,6 +86,12 @@ const router = createRouter({
       meta: { requiresAuth: true, title: 'ชุดโปรโมชัน' },
     },
     {
+      path: '/revenue',
+      name: 'Revenue',
+      component: () => import('@/views/RevenueView.vue'),
+      meta: { requiresAuth: true, title: 'ประมาณการรายได้' },
+    },
+    {
       path: '/sales',
       name: 'Sales',
       component: () => import('@/views/SalesView.vue'),
