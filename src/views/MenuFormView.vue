@@ -1,33 +1,35 @@
 <template>
   <MainLayout>
-    <div class="max-w-3xl space-y-6">
+    <div class="space-y-6">
       <div>
         <h1 class="page-title">{{ isEdit ? 'แก้ไขเมนู' : 'เพิ่มเมนู' }}</h1>
         <p class="text-gray-500 mt-1">ใส่สูตรวัตถุดิบ บรรจุภัณฑ์ และเมนูพ่วง — ระบบไม่แปลงหน่วยให้อัตโนมัติ</p>
       </div>
 
-      <form class="card p-6 space-y-5" @submit.prevent="save">
-        <div class="grid sm:grid-cols-2 gap-4">
-          <div class="sm:col-span-2">
-            <label class="block text-sm font-medium mb-1">ชื่อเมนู *</label>
-            <input v-model="form.name" required class="input-field w-full" />
+      <form class="card p-6 space-y-6" @submit.prevent="save">
+        <div class="grid lg:grid-cols-2 gap-6">
+          <div class="space-y-4">
+            <div>
+              <label class="block text-sm font-medium mb-1">ชื่อเมนู *</label>
+              <input v-model="form.name" required class="input-field w-full" />
+            </div>
+            <div>
+              <label class="block text-sm font-medium mb-1">ประเภทหน่วยขาย *</label>
+              <select v-model="form.saleUnitType" class="input-field w-full" @change="applyPreset">
+                <option value="box">กล่อง (ราดข้าว)</option>
+                <option value="bag">มัดถุง (กับข้าว)</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-sm font-medium mb-1">หมวดหมู่</label>
+              <select v-model="form.category" class="input-field w-full">
+                <option value="">เลือกหมวดหมู่</option>
+                <option v-if="legacyCategory" :value="legacyCategory">{{ legacyCategory }}</option>
+                <option v-for="cat in MENU_CATEGORIES" :key="cat" :value="cat">{{ cat }}</option>
+              </select>
+            </div>
           </div>
           <div>
-            <label class="block text-sm font-medium mb-1">ประเภทหน่วยขาย *</label>
-            <select v-model="form.saleUnitType" class="input-field w-full" @change="applyPreset">
-              <option value="box">กล่อง (ราดข้าว)</option>
-              <option value="bag">มัดถุง (กับข้าว)</option>
-            </select>
-          </div>
-          <div>
-            <label class="block text-sm font-medium mb-1">ราคาขาย (บาท) *</label>
-            <input v-model.number="form.sellingPrice" type="number" min="0" step="0.01" required class="input-field w-full" />
-          </div>
-          <div class="sm:col-span-2">
-            <label class="block text-sm font-medium mb-1">หมวดหมู่</label>
-            <input v-model="form.category" class="input-field w-full" placeholder="เช่น อาหารจานเดียว" />
-          </div>
-          <div class="sm:col-span-2">
             <label class="block text-sm font-medium mb-1">รูปอาหาร (URL สาธารณะ)</label>
             <input
               v-model="form.imageUrl"
@@ -53,80 +55,90 @@
 
         <section class="space-y-4">
           <h2 class="font-semibold">วัตถุดิบในสูตร</h2>
-          <div
-            v-for="cat in INGREDIENT_CATEGORIES"
-            :key="cat"
-            class="space-y-3 rounded-lg border border-gray-100 bg-gray-50/60 p-4"
-          >
-            <h3 class="text-sm font-medium text-gray-700">{{ cat }}</h3>
+          <div class="grid lg:grid-cols-2 gap-4">
             <div
-              v-for="(line, index) in ingredientLinesByCategory[cat]"
-              :key="cat + '-' + index"
-              class="flex gap-2"
+              v-for="cat in INGREDIENT_CATEGORIES"
+              :key="cat"
+              class="space-y-3 rounded-lg border border-gray-100 bg-gray-50/60 p-4"
             >
-              <select v-model="line.ingredientId" class="input-field flex-1">
-                <option value="">เลือก{{ cat }}...</option>
-                <option v-for="item in ingredientsFor(cat)" :key="item.id" :value="item.id">
+              <h3 class="text-sm font-medium text-gray-700">{{ cat }}</h3>
+              <div
+                v-for="(line, index) in ingredientLinesByCategory[cat]"
+                :key="cat + '-' + index"
+                class="flex gap-2"
+              >
+                <select v-model="line.ingredientId" class="input-field flex-1 min-w-0">
+                  <option value="">เลือก{{ cat }}...</option>
+                  <option v-for="item in ingredientsFor(cat)" :key="item.id" :value="item.id">
+                    {{ item.name }} ({{ item.unit }})
+                  </option>
+                </select>
+                <input
+                  v-model.number="line.quantityPerUnit"
+                  type="number"
+                  min="0"
+                  step="0.0001"
+                  class="input-field w-24 shrink-0"
+                  placeholder="ปริมาณ"
+                />
+                <button type="button" class="text-red-600 text-sm shrink-0" @click="removeIngredientLine(cat, index)">
+                  ลบ
+                </button>
+              </div>
+              <button type="button" class="text-primary-600 text-sm font-medium" @click="addIngredientLine(cat)">
+                + {{ cat === 'อื่นๆ' ? 'เพิ่มรายการอื่นๆ' : `เพิ่ม${cat}` }}
+              </button>
+            </div>
+          </div>
+        </section>
+
+        <div class="grid lg:grid-cols-2 gap-6">
+          <section class="space-y-3">
+            <div class="flex justify-between items-center">
+              <h2 class="font-semibold">บรรจุภัณฑ์</h2>
+              <button type="button" class="text-sm text-primary-600" @click="applyPreset">ใช้ preset ตามประเภทขาย</button>
+            </div>
+            <div v-for="(line, index) in packagingLines" :key="'pkg-' + index" class="flex gap-2">
+              <select v-model="line.ingredientId" class="input-field flex-1 min-w-0">
+                <option value="">เลือกบรรจุภัณฑ์...</option>
+                <option v-for="item in packaging" :key="item.id" :value="item.id">
                   {{ item.name }} ({{ item.unit }})
                 </option>
               </select>
-              <input
-                v-model.number="line.quantityPerUnit"
-                type="number"
-                min="0"
-                step="0.0001"
-                class="input-field w-28"
-                placeholder="ปริมาณ"
-              />
-              <button type="button" class="text-red-600 text-sm" @click="removeIngredientLine(cat, index)">
-                ลบ
-              </button>
+              <input v-model.number="line.quantityPerUnit" type="number" min="0" step="0.0001" class="input-field w-24 shrink-0" />
+              <button type="button" class="text-red-600 text-sm shrink-0" @click="packagingLines.splice(index, 1)">ลบ</button>
             </div>
-            <button type="button" class="text-primary-600 text-sm font-medium" @click="addIngredientLine(cat)">
-              + {{ cat === 'อื่นๆ' ? 'เพิ่มรายการอื่นๆ' : `เพิ่ม${cat}` }}
+            <button type="button" class="text-primary-600 text-sm font-medium" @click="packagingLines.push({ ingredientId: '', quantityPerUnit: 1 })">
+              + เพิ่มบรรจุภัณฑ์
             </button>
-          </div>
-        </section>
+          </section>
 
-        <section class="space-y-3">
-          <div class="flex justify-between items-center">
-            <h2 class="font-semibold">บรรจุภัณฑ์</h2>
-            <button type="button" class="text-sm text-primary-600" @click="applyPreset">ใช้ preset ตามประเภทขาย</button>
-          </div>
-          <div v-for="(line, index) in packagingLines" :key="'pkg-' + index" class="flex gap-2">
-            <select v-model="line.ingredientId" class="input-field flex-1">
-              <option value="">เลือกบรรจุภัณฑ์...</option>
-              <option v-for="item in packaging" :key="item.id" :value="item.id">
-                {{ item.name }} ({{ item.unit }})
-              </option>
-            </select>
-            <input v-model.number="line.quantityPerUnit" type="number" min="0" step="0.0001" class="input-field w-28" />
-            <button type="button" class="text-red-600 text-sm" @click="packagingLines.splice(index, 1)">ลบ</button>
-          </div>
-          <button type="button" class="text-primary-600 text-sm font-medium" @click="packagingLines.push({ ingredientId: '', quantityPerUnit: 1 })">
-            + เพิ่มบรรจุภัณฑ์
-          </button>
-        </section>
+          <section class="space-y-3">
+            <h2 class="font-semibold">เมนูพ่วง (เช่น ไข่ดาว)</h2>
+            <div v-for="(addon, index) in addons" :key="'add-' + index" class="flex gap-2">
+              <select v-model="addon.addonMenuItemId" class="input-field flex-1 min-w-0">
+                <option value="">เลือกเมนูพ่วง...</option>
+                <option v-for="menu in addonOptions" :key="menu.id" :value="menu.id">{{ menu.name }}</option>
+              </select>
+              <input v-model.number="addon.quantity" type="number" min="0.0001" step="0.0001" class="input-field w-24 shrink-0" />
+              <button type="button" class="text-red-600 text-sm shrink-0" @click="addons.splice(index, 1)">ลบ</button>
+            </div>
+            <button type="button" class="text-primary-600 text-sm font-medium" @click="addons.push({ addonMenuItemId: '', quantity: 1 })">
+              + เพิ่มเมนูพ่วง
+            </button>
+          </section>
+        </div>
 
-        <section class="space-y-3">
-          <h2 class="font-semibold">เมนูพ่วง (เช่น ไข่ดาว)</h2>
-          <div v-for="(addon, index) in addons" :key="'add-' + index" class="flex gap-2">
-            <select v-model="addon.addonMenuItemId" class="input-field flex-1">
-              <option value="">เลือกเมนูพ่วง...</option>
-              <option v-for="menu in addonOptions" :key="menu.id" :value="menu.id">{{ menu.name }}</option>
-            </select>
-            <input v-model.number="addon.quantity" type="number" min="0.0001" step="0.0001" class="input-field w-24" />
-            <button type="button" class="text-red-600 text-sm" @click="addons.splice(index, 1)">ลบ</button>
+        <div class="grid lg:grid-cols-2 gap-6 items-end">
+          <div>
+            <label class="block text-sm font-medium mb-1">ราคาขาย (บาท) *</label>
+            <input v-model.number="form.sellingPrice" type="number" min="0" step="0.01" required class="input-field w-full" />
           </div>
-          <button type="button" class="text-primary-600 text-sm font-medium" @click="addons.push({ addonMenuItemId: '', quantity: 1 })">
-            + เพิ่มเมนูพ่วง
-          </button>
-        </section>
-
-        <div v-if="preview" class="bg-gray-50 rounded-lg p-4 text-sm space-y-1">
-          <p>ต้นทุนรวมโดยประมาณ: <strong>{{ formatCurrency(preview.totalCost) }}</strong></p>
-          <p>กำไรสุทธิโดยประมาณ: <strong :class="preview.netProfit < 0 ? 'text-red-600' : 'text-green-700'">{{ formatCurrency(preview.netProfit) }}</strong>
-            ({{ preview.netMarginPercent.toFixed(1) }}%)</p>
+          <div v-if="preview" class="bg-gray-50 rounded-lg p-4 text-sm space-y-1">
+            <p>ต้นทุนรวมโดยประมาณ: <strong>{{ formatCurrency(preview.totalCost) }}</strong></p>
+            <p>กำไรสุทธิโดยประมาณ: <strong :class="preview.netProfit < 0 ? 'text-red-600' : 'text-green-700'">{{ formatCurrency(preview.netProfit) }}</strong>
+              ({{ preview.netMarginPercent.toFixed(1) }}%)</p>
+          </div>
         </div>
 
         <div class="flex gap-3">
@@ -153,6 +165,7 @@ import { getPackagingPresetLines, missingPresetLabels } from '@/utils/packagingP
 import { formatCurrency } from '@/utils/format'
 import {
   INGREDIENT_CATEGORIES,
+  MENU_CATEGORIES,
   isOtherIngredientCategory,
   type IngredientCategory,
   type MenuItem,
@@ -188,6 +201,12 @@ const form = reactive({
   sellingPrice: 0,
   category: '',
   imageUrl: '',
+})
+
+const legacyCategory = computed(() => {
+  const current = form.category
+  if (!current) return ''
+  return (MENU_CATEGORIES as readonly string[]).includes(current) ? '' : current
 })
 
 usePageTitle(

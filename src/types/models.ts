@@ -3,6 +3,20 @@ export type IngredientType = 'ingredient' | 'packaging'
 export const INGREDIENT_CATEGORIES = ['เนื้อสัตว์', 'ผัก', 'เครื่องปรุง', 'อื่นๆ'] as const
 export const PRIMARY_INGREDIENT_CATEGORIES = ['เนื้อสัตว์', 'ผัก', 'เครื่องปรุง'] as const
 export type IngredientCategory = (typeof INGREDIENT_CATEGORIES)[number]
+export const MENU_CATEGORIES = [
+  'อาหารจานเดียว',
+  'แกง / ต้ม',
+  'ผัด',
+  'ทอด',
+  'ย่าง / ปิ้ง / อบ',
+  'ยำ / สลัด',
+  'เส้น / ก๋วยเตี๋ยว',
+  'ทานเล่น / ของว่าง',
+  'อาหารเช้า',
+  'ของหวาน',
+  'เครื่องดื่ม',
+] as const
+export type MenuCategory = (typeof MENU_CATEGORIES)[number]
 
 export function isOtherIngredientCategory(category?: string) {
   return !category || !(PRIMARY_INGREDIENT_CATEGORIES as readonly string[]).includes(category)
