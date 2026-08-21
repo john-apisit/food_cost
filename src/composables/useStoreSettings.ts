@@ -72,6 +72,15 @@ export function useStoreSettings() {
       if ('targetMarginPercent' in updates) {
         payload.target_margin_percent = updates.targetMarginPercent ?? null
       }
+      if ('storeName' in updates) payload.store_name = updates.storeName?.trim() || null
+      if ('logoUrl' in updates) payload.logo_url = updates.logoUrl?.trim() || null
+      if ('bannerUrl' in updates) payload.banner_url = updates.bannerUrl?.trim() || null
+      if ('openTime' in updates) payload.open_time = updates.openTime?.trim() || null
+      if ('closeTime' in updates) payload.close_time = updates.closeTime?.trim() || null
+      if ('openDays' in updates) payload.open_days = updates.openDays ?? []
+      if ('googleMapUrl' in updates) payload.google_map_url = updates.googleMapUrl?.trim() || null
+      if ('address' in updates) payload.address = updates.address?.trim() || null
+      if ('phone' in updates) payload.phone = updates.phone?.trim() || null
 
       const { data, error: updateError } = await supabase
         .from('store_settings')

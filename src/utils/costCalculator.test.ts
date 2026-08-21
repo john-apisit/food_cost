@@ -15,6 +15,7 @@ const settings: StoreSettings = {
   fixedCostBox: 5,
   fixedCostBag: 3,
   targetMarginPercent: 30,
+  openDays: [],
   createdAt: '',
   updatedAt: '',
 }

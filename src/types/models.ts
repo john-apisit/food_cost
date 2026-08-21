@@ -38,6 +38,21 @@ export function isOtherIngredientCategory(category?: string) {
   return !category || !(PRIMARY_INGREDIENT_CATEGORIES as readonly string[]).includes(category)
 }
 
+export const WEEKDAYS = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'] as const
+export type Weekday = (typeof WEEKDAYS)[number]
+export const WEEKDAY_LABELS: Record<Weekday, string> = {
+  mon: 'จันทร์',
+  tue: 'อังคาร',
+  wed: 'พุธ',
+  thu: 'พฤหัส',
+  fri: 'ศุกร์',
+  sat: 'เสาร์',
+  sun: 'อาทิตย์',
+}
+export function isWeekday(value: unknown): value is Weekday {
+  return (WEEKDAYS as readonly string[]).includes(String(value))
+}
+
 export interface StoreSettings {
   id: string
   userId: string
@@ -47,6 +62,15 @@ export interface StoreSettings {
   fixedCostBag: number
   targetFoodCostPercent?: number
   targetMarginPercent?: number
+  storeName?: string
+  logoUrl?: string
+  bannerUrl?: string
+  openTime?: string
+  closeTime?: string
+  openDays: Weekday[]
+  googleMapUrl?: string
+  address?: string
+  phone?: string
   createdAt: string
   updatedAt: string
 }

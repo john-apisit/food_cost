@@ -19,6 +19,15 @@ export interface Database {
           fixed_cost_bag: number
           target_food_cost_percent: number | null
           target_margin_percent: number | null
+          store_name: string | null
+          logo_url: string | null
+          banner_url: string | null
+          open_time: string | null
+          close_time: string | null
+          open_days: string[]
+          google_map_url: string | null
+          address: string | null
+          phone: string | null
           created_at: string
           updated_at: string
         }
@@ -31,6 +40,15 @@ export interface Database {
           fixed_cost_bag?: number
           target_food_cost_percent?: number | null
           target_margin_percent?: number | null
+          store_name?: string | null
+          logo_url?: string | null
+          banner_url?: string | null
+          open_time?: string | null
+          close_time?: string | null
+          open_days?: string[]
+          google_map_url?: string | null
+          address?: string | null
+          phone?: string | null
           created_at?: string
           updated_at?: string
         }
@@ -43,6 +61,15 @@ export interface Database {
           fixed_cost_bag?: number
           target_food_cost_percent?: number | null
           target_margin_percent?: number | null
+          store_name?: string | null
+          logo_url?: string | null
+          banner_url?: string | null
+          open_time?: string | null
+          close_time?: string | null
+          open_days?: string[]
+          google_map_url?: string | null
+          address?: string | null
+          phone?: string | null
           created_at?: string
           updated_at?: string
         }

@@ -1,5 +1,6 @@
 import {
   isMenuStatus,
+  WEEKDAYS,
   type Combo,
   type ComboItem,
   type Ingredient,
@@ -22,7 +23,14 @@ function optStr(value: unknown): string | undefined {
   return value == null || value === '' ? undefined : String(value)
 }
 
+function optTime(value: unknown): string | undefined {
+  if (value == null || value === '') return undefined
+  const match = String(value).match(/^(\d{1,2}:\d{2})/)
+  return match?.[1]
+}
+
 export function mapStoreSettings(row: Record<string, unknown>): StoreSettings {
+  const days = Array.isArray(row.open_days) ? row.open_days.map(String) : []
   return {
     id: String(row.id),
     userId: String(row.user_id),
@@ -32,6 +40,15 @@ export function mapStoreSettings(row: Record<string, unknown>): StoreSettings {
     fixedCostBag: num(row.fixed_cost_bag),
     targetFoodCostPercent: row.target_food_cost_percent == null ? undefined : num(row.target_food_cost_percent),
     targetMarginPercent: row.target_margin_percent == null ? undefined : num(row.target_margin_percent),
+    storeName: optStr(row.store_name),
+    logoUrl: optStr(row.logo_url),
+    bannerUrl: optStr(row.banner_url),
+    openTime: optTime(row.open_time),
+    closeTime: optTime(row.close_time),
+    openDays: WEEKDAYS.filter((day) => days.includes(day)),
+    googleMapUrl: optStr(row.google_map_url),
+    address: optStr(row.address),
+    phone: optStr(row.phone),
     createdAt: String(row.created_at),
     updatedAt: String(row.updated_at),
   }
