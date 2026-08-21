@@ -59,7 +59,7 @@
 
       <MenuComparisonTable
         v-if="breakdowns.length"
-        :breakdowns="topBreakdowns"
+        :breakdowns="breakdowns"
         :loading="false"
         :target-margin="settings?.targetMarginPercent"
         @select="goToMenu"
@@ -90,10 +90,6 @@ const avgMargin = computed(() => {
   if (!breakdowns.value.length) return 0
   return breakdowns.value.reduce((sum, b) => sum + b.netMarginPercent, 0) / breakdowns.value.length
 })
-const topBreakdowns = computed(() =>
-  [...breakdowns.value].sort((a, b) => b.netProfit - a.netProfit).slice(0, 5),
-)
-
 const goToMenu = (menu: MenuItem) => router.push(`/menu/${menu.id}`)
 
 onMounted(() => {
