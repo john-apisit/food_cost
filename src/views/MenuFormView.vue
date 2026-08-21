@@ -176,9 +176,32 @@
             <input v-model.number="form.sellingPrice" type="number" min="0" step="0.01" required class="input-field w-full" />
           </div>
           <div v-if="preview" class="bg-gray-50 rounded-lg p-4 text-sm space-y-1">
-            <p>ต้นทุนรวมโดยประมาณ: <strong>{{ formatCurrency(preview.totalCost) }}</strong></p>
-            <p>กำไรสุทธิโดยประมาณ: <strong :class="preview.netProfit < 0 ? 'text-red-600' : 'text-green-700'">{{ formatCurrency(preview.netProfit) }}</strong>
-              ({{ preview.netMarginPercent.toFixed(1) }}%)</p>
+            <p class="flex justify-between gap-3 text-gray-600">
+              <span>วัตถุดิบ</span>
+              <span>{{ formatCurrency(preview.ingredientCost) }}</span>
+            </p>
+            <p class="flex justify-between gap-3 text-gray-600">
+              <span>บรรจุภัณฑ์</span>
+              <span>{{ formatCurrency(preview.packagingCost) }}</span>
+            </p>
+            <p class="flex justify-between gap-3 text-gray-600">
+              <span>ต้นทุนคงที่</span>
+              <span>{{ formatCurrency(preview.fixedCost) }}</span>
+            </p>
+            <p class="flex justify-between gap-3 text-gray-600">
+              <span>ค่าบริการ {{ settings?.platformName }} ({{ settings?.platformFeePercent }}%)</span>
+              <span>{{ formatCurrency(preview.platformFee) }}</span>
+            </p>
+            <p class="flex justify-between gap-3 pt-1 border-t border-gray-200">
+              <span>ต้นทุนรวมโดยประมาณ</span>
+              <strong>{{ formatCurrency(preview.totalCost + preview.platformFee) }}</strong>
+            </p>
+            <p class="flex justify-between gap-3">
+              <span>กำไรสุทธิโดยประมาณ</span>
+              <strong :class="preview.netProfit < 0 ? 'text-red-600' : 'text-green-700'">
+                {{ formatCurrency(preview.netProfit) }} ({{ preview.netMarginPercent.toFixed(1) }}%)
+              </strong>
+            </p>
           </div>
         </div>
 
