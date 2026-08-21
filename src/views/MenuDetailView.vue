@@ -18,6 +18,9 @@
               {{ breakdown.menuItem.name }}
             </p>
             <h1 class="page-title mt-1">{{ breakdown.menuItem.name }}</h1>
+            <p v-if="breakdown.menuItem.description" class="mt-1 text-gray-600 whitespace-pre-line">
+              {{ breakdown.menuItem.description }}
+            </p>
             <p class="text-gray-500">
               {{ saleUnitLabel(breakdown.menuItem.saleUnitType) }} · ราคาขาย {{ formatCurrency(breakdown.menuItem.sellingPrice) }}
             </p>

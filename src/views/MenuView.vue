@@ -29,6 +29,7 @@
             <div class="flex justify-between gap-3">
               <div>
                 <h2 class="font-bold text-lg">{{ menu.name }}</h2>
+                <p v-if="menu.description" class="mt-0.5 text-sm text-gray-600 line-clamp-2">{{ menu.description }}</p>
                 <p class="text-sm text-gray-500">{{ menu.category || 'ไม่มีหมวดหมู่' }}</p>
               </div>
               <span

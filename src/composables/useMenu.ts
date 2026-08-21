@@ -89,6 +89,7 @@ export function useMenu() {
         .insert({
           user_id: user.value.id,
           name: menuItem.name,
+          description: menuItem.description || null,
           sale_unit_type: menuItem.saleUnitType,
           selling_price: menuItem.sellingPrice,
           category: menuItem.category || null,
@@ -141,6 +142,7 @@ export function useMenu() {
         .from('menu_items')
         .update({
           name: updates.name,
+          description: updates.description || null,
           sale_unit_type: updates.saleUnitType,
           selling_price: updates.sellingPrice,
           category: updates.category || null,
@@ -211,6 +213,7 @@ export function useMenu() {
 
     await createMenuItem({
       name: newName,
+      description: original.description,
       saleUnitType: original.saleUnitType,
       sellingPrice: original.sellingPrice,
       category: original.category,

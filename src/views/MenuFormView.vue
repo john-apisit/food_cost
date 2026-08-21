@@ -14,6 +14,15 @@
               <input v-model="form.name" required class="input-field w-full" />
             </div>
             <div>
+              <label class="block text-sm font-medium mb-1">รายละเอียด</label>
+              <textarea
+                v-model="form.description"
+                rows="3"
+                class="input-field w-full"
+                placeholder="เช่น ส่วนประกอบเด่น ระดับความเผ็ด หรือโน้ตสำหรับทำขาย"
+              ></textarea>
+            </div>
+            <div>
               <label class="block text-sm font-medium mb-1">ประเภทหน่วยขาย *</label>
               <select v-model="form.saleUnitType" class="input-field w-full" @change="applyPreset">
                 <option value="box">กล่อง (ราดข้าว)</option>
@@ -197,6 +206,7 @@ const appliedPreset = ref(false)
 
 const form = reactive({
   name: '',
+  description: '',
   saleUnitType: 'box' as SaleUnitType,
   sellingPrice: 0,
   category: '',
@@ -294,6 +304,7 @@ const save = async () => {
   try {
     const payload = {
       name: form.name,
+      description: form.description.trim() || undefined,
       saleUnitType: form.saleUnitType,
       sellingPrice: form.sellingPrice,
       category: form.category || undefined,
@@ -332,6 +343,7 @@ onMounted(async () => {
   if (isEdit.value) {
     const menu = await fetchMenuItemById(String(route.params.id))
     form.name = menu.name
+    form.description = menu.description || ''
     form.saleUnitType = menu.saleUnitType
     form.sellingPrice = menu.sellingPrice
     form.category = menu.category || ''

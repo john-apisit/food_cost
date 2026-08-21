@@ -122,6 +122,7 @@ export interface Database {
           id: string
           user_id: string
           name: string
+          description: string | null
           sale_unit_type: 'box' | 'bag'
           selling_price: number
           category: string | null
@@ -134,6 +135,7 @@ export interface Database {
           id?: string
           user_id: string
           name: string
+          description?: string | null
           sale_unit_type: 'box' | 'bag'
           selling_price: number
           category?: string | null
@@ -146,6 +148,7 @@ export interface Database {
           id?: string
           user_id?: string
           name?: string
+          description?: string | null
           sale_unit_type?: 'box' | 'bag'
           selling_price?: number
           category?: string | null

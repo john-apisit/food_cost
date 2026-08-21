@@ -93,6 +93,7 @@ export function mapMenuItem(row: Record<string, unknown>, nested = true): MenuIt
     id: String(row.id),
     userId: String(row.user_id),
     name: String(row.name),
+    description: optStr(row.description),
     saleUnitType: row.sale_unit_type === 'bag' ? 'bag' : 'box',
     sellingPrice: num(row.selling_price),
     category: optStr(row.category),

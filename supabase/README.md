@@ -21,6 +21,7 @@ supabase/
     20260820120009_purchase_plans.sql
     20260820120010_purchase_plan_lines.sql
     20260820120011_sales_records.sql
+    20260821140000_menu_item_description.sql
 ```
 
 Each table has its own migration file, including indexes, triggers, RLS policies, and grants. Shared helpers (`update_updated_at_column`) live in `extensions.sql`. Primary keys use Postgres `gen_random_uuid()` (not `uuid-ossp`, which is not on the hosted search path). Files are ordered so foreign keys always point at tables that already exist.
@@ -38,6 +39,7 @@ Each table has its own migration file, including indexes, triggers, RLS policies
 | `purchase_plans` | `auth.users` |
 | `purchase_plan_lines` | `purchase_plans`, `menu_items` |
 | `sales_records` | `auth.users`, `purchase_plans`, `menu_items` |
+| `menu_item_description` | `menu_items` |
 
 ## Prerequisites
 

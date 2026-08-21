@@ -80,6 +80,7 @@ export interface MenuItem {
   id: string
   userId: string
   name: string
+  description?: string
   saleUnitType: SaleUnitType
   sellingPrice: number
   category?: string
@@ -203,6 +204,7 @@ export interface AppNotification {
 
 export interface MenuFormPayload {
   name: string
+  description?: string
   saleUnitType: SaleUnitType
   sellingPrice: number
   category?: string
