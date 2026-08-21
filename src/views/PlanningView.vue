@@ -86,8 +86,8 @@
                 <tr>
                   <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">รายการ</th>
                   <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">ประเภท</th>
-                  <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">หน่วย</th>
                   <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">ปริมาณรวม</th>
+                  <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">หน่วย</th>
                   <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">ราคา/หน่วย</th>
                   <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">ราคารวม</th>
                 </tr>
@@ -120,8 +120,8 @@
                         {{ ingredientTypeLabel(item.ingredient.type) }}
                       </span>
                     </td>
-                    <td class="px-4 py-3">{{ item.ingredient.unit }}</td>
                     <td class="px-4 py-3 text-right font-medium">{{ formatNumber(item.totalQuantity) }}</td>
+                    <td class="px-4 py-3">{{ item.ingredient.unit }}</td>
                     <td class="px-4 py-3 text-right">{{ formatCurrency(item.ingredient.pricePerUnit) }}</td>
                     <td class="px-4 py-3 text-right font-semibold">{{ formatCurrency(item.totalCost) }}</td>
                   </tr>
