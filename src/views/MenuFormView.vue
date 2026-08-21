@@ -63,23 +63,31 @@
         </p>
 
         <section class="space-y-4">
-          <h2 class="font-semibold">วัตถุดิบในสูตร</h2>
+          <div class="flex flex-col sm:flex-row sm:items-baseline sm:justify-between gap-1">
+            <h2 class="font-semibold">วัตถุดิบในสูตร</h2>
+            <p class="text-xs text-gray-500">ต้นทุน = ปริมาณ × ราคาต่อหน่วย</p>
+          </div>
           <div class="grid lg:grid-cols-2 gap-4">
             <div
               v-for="cat in INGREDIENT_CATEGORIES"
               :key="cat"
               class="space-y-3 rounded-lg border border-gray-100 bg-gray-50/60 p-4"
             >
-              <h3 class="text-sm font-medium text-gray-700">{{ cat }}</h3>
+              <div class="flex items-baseline justify-between gap-3">
+                <h3 class="text-sm font-medium text-gray-700">{{ cat }}</h3>
+                <p v-if="categoryLineCost(cat) > 0" class="text-xs text-gray-500">
+                  {{ formatCurrency(categoryLineCost(cat)) }}
+                </p>
+              </div>
               <div
                 v-for="(line, index) in ingredientLinesByCategory[cat]"
                 :key="cat + '-' + index"
-                class="flex gap-2"
+                class="flex gap-2 items-center"
               >
                 <select v-model="line.ingredientId" class="input-field flex-1 min-w-0">
                   <option value="">เลือก{{ cat }}...</option>
                   <option v-for="item in ingredientsFor(cat)" :key="item.id" :value="item.id">
-                    {{ item.name }} ({{ item.unit }})
+                    {{ item.name }} ({{ formatCurrency(item.pricePerUnit) }}/{{ item.unit }})
                   </option>
                 </select>
                 <input
@@ -90,6 +98,9 @@
                   class="input-field w-24 shrink-0"
                   placeholder="ปริมาณ"
                 />
+                <span class="w-24 shrink-0 text-right text-sm tabular-nums text-gray-700">
+                  {{ line.ingredientId ? formatCurrency(recipeLineCost(line)) : '—' }}
+                </span>
                 <button type="button" class="text-red-600 text-sm shrink-0" @click="removeIngredientLine(cat, index)">
                   ลบ
                 </button>
@@ -103,18 +114,21 @@
 
         <div class="grid lg:grid-cols-2 gap-6">
           <section class="space-y-3">
-            <div class="flex justify-between items-center">
+            <div class="flex justify-between items-center gap-3">
               <h2 class="font-semibold">บรรจุภัณฑ์</h2>
               <button type="button" class="text-sm text-primary-600" @click="applyPreset">ใช้ preset ตามประเภทขาย</button>
             </div>
-            <div v-for="(line, index) in packagingLines" :key="'pkg-' + index" class="flex gap-2">
+            <div v-for="(line, index) in packagingLines" :key="'pkg-' + index" class="flex gap-2 items-center">
               <select v-model="line.ingredientId" class="input-field flex-1 min-w-0">
                 <option value="">เลือกบรรจุภัณฑ์...</option>
                 <option v-for="item in packaging" :key="item.id" :value="item.id">
-                  {{ item.name }} ({{ item.unit }})
+                  {{ item.name }} ({{ formatCurrency(item.pricePerUnit) }}/{{ item.unit }})
                 </option>
               </select>
               <input v-model.number="line.quantityPerUnit" type="number" min="0" step="0.0001" class="input-field w-24 shrink-0" />
+              <span class="w-24 shrink-0 text-right text-sm tabular-nums text-gray-700">
+                {{ line.ingredientId ? formatCurrency(recipeLineCost(line)) : '—' }}
+              </span>
               <button type="button" class="text-red-600 text-sm shrink-0" @click="packagingLines.splice(index, 1)">ลบ</button>
             </div>
             <button type="button" class="text-primary-600 text-sm font-medium" @click="packagingLines.push({ ingredientId: '', quantityPerUnit: 1 })">
@@ -237,6 +251,15 @@ const allIngredientLines = computed(() =>
 )
 const ingredientsFor = (cat: IngredientCategory) =>
   foodIngredients.value.filter((i) => categoryOf(i.category) === cat)
+
+const recipeLineCost = (line: RecipeLineDraft) => {
+  const item = ingredients.value.find((i) => i.id === line.ingredientId)
+  if (!item) return 0
+  return (Number(line.quantityPerUnit) || 0) * item.pricePerUnit
+}
+
+const categoryLineCost = (cat: IngredientCategory) =>
+  ingredientLinesByCategory.value[cat].reduce((sum, line) => sum + recipeLineCost(line), 0)
 
 const addIngredientLine = (cat: IngredientCategory) => {
   ingredientLinesByCategory.value[cat].push({ ingredientId: '', quantityPerUnit: 0 })
