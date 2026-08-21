@@ -18,8 +18,25 @@
       </div>
 
       <div>
-        <label class="block text-sm font-medium text-gray-700 mb-1">หมวดหมู่</label>
-        <input v-model="formData.category" type="text" placeholder="เช่น เนื้อสัตว์, ผัก" class="input-field w-full" />
+        <label class="block text-sm font-medium text-gray-700 mb-1">
+          หมวดหมู่{{ type === 'ingredient' ? ' *' : '' }}
+        </label>
+        <select
+          v-if="type === 'ingredient'"
+          v-model="formData.category"
+          required
+          class="input-field w-full"
+        >
+          <option v-if="legacyCategory" :value="legacyCategory">{{ legacyCategory }}</option>
+          <option v-for="cat in INGREDIENT_CATEGORIES" :key="cat" :value="cat">{{ cat }}</option>
+        </select>
+        <input
+          v-else
+          v-model="formData.category"
+          type="text"
+          placeholder="เช่น กล่อง, มัดถุง"
+          class="input-field w-full"
+        />
       </div>
 
       <div v-if="type === 'ingredient'">
@@ -44,13 +61,14 @@
 
 <script setup lang="ts">
 import { computed, reactive, watch } from 'vue'
-import type { Ingredient, IngredientType } from '@/types/models'
+import { INGREDIENT_CATEGORIES, type Ingredient, type IngredientType } from '@/types/models'
 import Modal from '@/components/common/Modal.vue'
 
 const props = defineProps<{
   isOpen: boolean
   ingredient?: Ingredient | null
   type: IngredientType
+  defaultCategory?: string
   saving?: boolean
 }>()
 
@@ -80,19 +98,29 @@ const formData = reactive({
 })
 
 const heading = computed(() => {
-  const noun = props.type === 'ingredient' ? 'วัตถุดิบ' : 'บรรจุภัณฑ์'
-  return `${props.ingredient?.id ? 'แก้ไข' : 'เพิ่ม'}${noun}`
+  if (props.type === 'packaging') {
+    return `${props.ingredient?.id ? 'แก้ไข' : 'เพิ่ม'}บรรจุภัณฑ์`
+  }
+  const category = props.ingredient?.category || props.defaultCategory || 'วัตถุดิบ'
+  const label = category === 'อื่นๆ' ? 'รายการอื่นๆ' : category
+  return `${props.ingredient?.id ? 'แก้ไข' : 'เพิ่ม'}${label}`
+})
+
+const legacyCategory = computed(() => {
+  const current = props.ingredient?.category
+  if (!current) return ''
+  return (INGREDIENT_CATEGORIES as readonly string[]).includes(current) ? '' : current
 })
 
 watch(
-  () => [props.ingredient, props.isOpen, props.type] as const,
+  () => [props.ingredient, props.isOpen, props.type, props.defaultCategory] as const,
   () => {
     formData.type = props.type
     if (props.ingredient) {
       formData.name = props.ingredient.name
       formData.unit = props.ingredient.unit
       formData.pricePerUnit = props.ingredient.pricePerUnit
-      formData.category = props.ingredient.category || ''
+      formData.category = props.ingredient.category || props.defaultCategory || ''
       formData.supplier = props.ingredient.supplier || ''
       formData.notes = props.ingredient.notes || ''
       formData.isActive = props.ingredient.isActive
@@ -100,7 +128,7 @@ watch(
       formData.name = ''
       formData.unit = ''
       formData.pricePerUnit = 0
-      formData.category = ''
+      formData.category = props.type === 'ingredient' ? (props.defaultCategory || INGREDIENT_CATEGORIES[0]) : ''
       formData.supplier = ''
       formData.notes = ''
       formData.isActive = true

@@ -1,5 +1,12 @@
 export type SaleUnitType = 'box' | 'bag'
 export type IngredientType = 'ingredient' | 'packaging'
+export const INGREDIENT_CATEGORIES = ['เนื้อสัตว์', 'ผัก', 'เครื่องปรุง', 'อื่นๆ'] as const
+export const PRIMARY_INGREDIENT_CATEGORIES = ['เนื้อสัตว์', 'ผัก', 'เครื่องปรุง'] as const
+export type IngredientCategory = (typeof INGREDIENT_CATEGORIES)[number]
+
+export function isOtherIngredientCategory(category?: string) {
+  return !category || !(PRIMARY_INGREDIENT_CATEGORIES as readonly string[]).includes(category)
+}
 
 export interface StoreSettings {
   id: string

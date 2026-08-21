@@ -3,9 +3,11 @@
     <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
       <h2 class="text-2xl font-bold">{{ title }}</h2>
       <button type="button" class="btn-primary" @click="$emit('add')">
-        + เพิ่ม{{ type === 'ingredient' ? 'วัตถุดิบ' : type === 'packaging' ? 'บรรจุภัณฑ์' : 'รายการ' }}
+        + {{ addLabel || (type === 'ingredient' ? 'เพิ่มวัตถุดิบ' : type === 'packaging' ? 'เพิ่มบรรจุภัณฑ์' : 'เพิ่มรายการ') }}
       </button>
     </div>
+
+    <slot name="tabs" />
 
     <div class="flex flex-col sm:flex-row gap-3">
       <input
@@ -39,7 +41,7 @@
               <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">หน่วย</th>
               <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">ราคา/หน่วย</th>
               <th v-if="!type" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">ประเภท</th>
-              <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">หมวดหมู่</th>
+              <th v-if="!hideCategory" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">หมวดหมู่</th>
               <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">จัดการ</th>
             </tr>
           </thead>
@@ -62,7 +64,7 @@
                   {{ item.type === 'ingredient' ? 'วัตถุดิบ' : 'บรรจุภัณฑ์' }}
                 </span>
               </td>
-              <td class="px-4 py-3 text-gray-500">{{ item.category || '-' }}</td>
+              <td v-if="!hideCategory" class="px-4 py-3 text-gray-500">{{ item.category || '-' }}</td>
               <td class="px-4 py-3 text-right text-sm font-medium whitespace-nowrap">
                 <button type="button" class="text-gray-600 hover:text-gray-900 mr-3" @click="$emit('history', item)">
                   ประวัติราคา
@@ -93,6 +95,8 @@ const props = defineProps<{
   loading: boolean
   title: string
   type?: IngredientType
+  addLabel?: string
+  hideCategory?: boolean
 }>()
 
 defineEmits<{
