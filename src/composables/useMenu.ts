@@ -214,6 +214,7 @@ export function useMenu() {
       saleUnitType: original.saleUnitType,
       sellingPrice: original.sellingPrice,
       category: original.category,
+      imageUrl: original.imageUrl,
       recipeLines: original.recipeLines?.map((line) => ({
         ingredientId: line.ingredientId,
         quantityPerUnit: line.quantityPerUnit,

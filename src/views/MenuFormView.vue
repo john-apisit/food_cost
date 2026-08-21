@@ -27,6 +27,23 @@
             <label class="block text-sm font-medium mb-1">หมวดหมู่</label>
             <input v-model="form.category" class="input-field w-full" placeholder="เช่น อาหารจานเดียว" />
           </div>
+          <div class="sm:col-span-2">
+            <label class="block text-sm font-medium mb-1">รูปอาหาร (URL สาธารณะ)</label>
+            <input
+              v-model="form.imageUrl"
+              type="url"
+              class="input-field w-full"
+              placeholder="https://example.com/pad-kra-pao.jpg"
+            />
+            <p class="text-xs text-gray-500 mt-1">วางลิงก์รูปที่เปิดได้โดยไม่ต้องล็อกอิน เช่น จาก CDN หรือ hosting</p>
+            <MenuImage
+              v-if="form.imageUrl"
+              class="mt-3 max-w-sm rounded-lg border border-gray-100"
+              :src="form.imageUrl"
+              :alt="form.name || 'ตัวอย่างรูปเมนู'"
+              wrapper-class="aspect-[4/3]"
+            />
+          </div>
         </div>
 
         <p v-if="missingLabels.length" class="text-sm text-yellow-800 bg-yellow-50 rounded-lg px-3 py-2">
@@ -105,6 +122,7 @@
 import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import MainLayout from '@/layouts/MainLayout.vue'
+import MenuImage from '@/components/menu/MenuImage.vue'
 import { useIngredients } from '@/composables/useIngredients'
 import { useMenu } from '@/composables/useMenu'
 import { useStoreSettings } from '@/composables/useStoreSettings'
@@ -130,6 +148,7 @@ const form = reactive({
   saleUnitType: 'box' as SaleUnitType,
   sellingPrice: 0,
   category: '',
+  imageUrl: '',
 })
 
 const ingredientLines = ref<Array<{ ingredientId: string; quantityPerUnit: number }>>([
@@ -201,6 +220,7 @@ const save = async () => {
       saleUnitType: form.saleUnitType,
       sellingPrice: form.sellingPrice,
       category: form.category || undefined,
+      imageUrl: form.imageUrl.trim() || undefined,
       recipeLines: [...ingredientLines.value, ...packagingLines.value].filter(
         (l) => l.ingredientId && l.quantityPerUnit > 0,
       ),
@@ -237,6 +257,7 @@ onMounted(async () => {
     form.saleUnitType = menu.saleUnitType
     form.sellingPrice = menu.sellingPrice
     form.category = menu.category || ''
+    form.imageUrl = menu.imageUrl || ''
     ingredientLines.value = (menu.recipeLines || [])
       .filter((l) => l.ingredient?.type !== 'packaging')
       .map((l) => ({ ingredientId: l.ingredientId, quantityPerUnit: l.quantityPerUnit }))

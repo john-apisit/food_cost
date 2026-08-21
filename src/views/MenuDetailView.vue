@@ -3,19 +3,33 @@
     <div v-if="loading && !breakdown" class="text-gray-500">กำลังโหลด...</div>
     <div v-else-if="!breakdown" class="text-gray-500">ไม่พบเมนู</div>
     <div v-else class="space-y-6">
-      <div class="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3">
-        <div>
-          <p class="text-sm text-gray-500">
-            <router-link to="/menu" class="hover:underline">เมนู</router-link> /
-            {{ breakdown.menuItem.name }}
-          </p>
-          <h1 class="page-title mt-1">{{ breakdown.menuItem.name }}</h1>
-          <p class="text-gray-500">
-            {{ saleUnitLabel(breakdown.menuItem.saleUnitType) }} · ราคาขาย {{ formatCurrency(breakdown.menuItem.sellingPrice) }}
-          </p>
+      <div class="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4">
+        <div class="flex gap-4 min-w-0">
+          <MenuImage
+            class="hidden sm:block w-28 shrink-0 rounded-xl border border-gray-100"
+            :src="breakdown.menuItem.imageUrl"
+            :alt="breakdown.menuItem.name"
+            wrapper-class="aspect-square"
+            icon-class="h-8 w-8"
+          />
+          <div class="min-w-0">
+            <p class="text-sm text-gray-500">
+              <router-link to="/menu" class="hover:underline">เมนู</router-link> /
+              {{ breakdown.menuItem.name }}
+            </p>
+            <h1 class="page-title mt-1">{{ breakdown.menuItem.name }}</h1>
+            <p class="text-gray-500">
+              {{ saleUnitLabel(breakdown.menuItem.saleUnitType) }} · ราคาขาย {{ formatCurrency(breakdown.menuItem.sellingPrice) }}
+            </p>
+          </div>
         </div>
-        <router-link :to="`/menu/${breakdown.menuItem.id}/edit`" class="btn-secondary">แก้ไขเมนู</router-link>
+        <router-link :to="`/menu/${breakdown.menuItem.id}/edit`" class="btn-secondary shrink-0">แก้ไขเมนู</router-link>
       </div>
+      <MenuImage
+        class="sm:hidden rounded-xl border border-gray-100"
+        :src="breakdown.menuItem.imageUrl"
+        :alt="breakdown.menuItem.name"
+      />
 
       <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <div class="card p-4">
@@ -102,6 +116,7 @@
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import MainLayout from '@/layouts/MainLayout.vue'
+import MenuImage from '@/components/menu/MenuImage.vue'
 import { useCostBreakdown } from '@/composables/useCostBreakdown'
 import { calculateSuggestedPrice, simulateSellingPrice } from '@/utils/costCalculator'
 import { formatCurrency, formatNumber, saleUnitLabel } from '@/utils/format'

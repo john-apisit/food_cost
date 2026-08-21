@@ -20,26 +20,29 @@
         <router-link to="/menu/new" class="btn-primary">เพิ่มเมนูแรก</router-link>
       </EmptyState>
 
-      <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <article v-for="menu in filtered" :key="menu.id" class="card p-5 space-y-3">
-          <div class="flex justify-between gap-3">
-            <div>
-              <h2 class="font-bold text-lg">{{ menu.name }}</h2>
-              <p class="text-sm text-gray-500">{{ menu.category || 'ไม่มีหมวดหมู่' }}</p>
+      <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <article v-for="menu in filtered" :key="menu.id" class="card overflow-hidden flex flex-col">
+          <MenuImage :src="menu.imageUrl" :alt="menu.name" />
+          <div class="p-5 space-y-3 flex-1 flex flex-col">
+            <div class="flex justify-between gap-3">
+              <div>
+                <h2 class="font-bold text-lg">{{ menu.name }}</h2>
+                <p class="text-sm text-gray-500">{{ menu.category || 'ไม่มีหมวดหมู่' }}</p>
+              </div>
+              <span
+                class="h-fit px-2 py-1 text-xs rounded-full"
+                :class="menu.saleUnitType === 'box' ? 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800'"
+              >
+                {{ saleUnitLabel(menu.saleUnitType) }}
+              </span>
             </div>
-            <span
-              class="h-fit px-2 py-1 text-xs rounded-full"
-              :class="menu.saleUnitType === 'box' ? 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800'"
-            >
-              {{ saleUnitLabel(menu.saleUnitType) }}
-            </span>
-          </div>
-          <p class="text-sm">ราคาขาย <span class="font-semibold">{{ formatCurrency(menu.sellingPrice) }}</span></p>
-          <div class="flex flex-wrap gap-2 text-sm">
-            <router-link :to="`/menu/${menu.id}`" class="text-primary-600 font-medium">ดูต้นทุน</router-link>
-            <router-link :to="`/menu/${menu.id}/edit`" class="text-gray-600">แก้ไข</router-link>
-            <button type="button" class="text-gray-600" @click="duplicate(menu)">คัดลอกสูตร</button>
-            <button type="button" class="text-red-600" @click="remove(menu)">ลบ</button>
+            <p class="text-sm">ราคาขาย <span class="font-semibold">{{ formatCurrency(menu.sellingPrice) }}</span></p>
+            <div class="flex flex-wrap gap-2 text-sm mt-auto">
+              <router-link :to="`/menu/${menu.id}`" class="text-primary-600 font-medium">ดูต้นทุน</router-link>
+              <router-link :to="`/menu/${menu.id}/edit`" class="text-gray-600">แก้ไข</router-link>
+              <button type="button" class="text-gray-600" @click="duplicate(menu)">คัดลอกสูตร</button>
+              <button type="button" class="text-red-600" @click="remove(menu)">ลบ</button>
+            </div>
           </div>
         </article>
       </div>
@@ -51,6 +54,7 @@
 import { computed, onMounted, ref } from 'vue'
 import MainLayout from '@/layouts/MainLayout.vue'
 import EmptyState from '@/components/common/EmptyState.vue'
+import MenuImage from '@/components/menu/MenuImage.vue'
 import { useMenu } from '@/composables/useMenu'
 import { useToast } from '@/composables/useToast'
 import { formatCurrency, saleUnitLabel } from '@/utils/format'

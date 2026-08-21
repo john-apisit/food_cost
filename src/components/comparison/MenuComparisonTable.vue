@@ -45,7 +45,18 @@
               :class="getRowClass(breakdown)"
               @click="$emit('select', breakdown.menuItem)"
             >
-              <td class="px-4 py-3 font-medium">{{ breakdown.menuItem.name }}</td>
+              <td class="px-4 py-3">
+                <div class="flex items-center gap-3 min-w-0">
+                  <MenuImage
+                    class="h-10 w-10 shrink-0 rounded-lg border border-gray-100"
+                    :src="breakdown.menuItem.imageUrl"
+                    :alt="breakdown.menuItem.name"
+                    wrapper-class="h-10 w-10"
+                    icon-class="h-4 w-4"
+                  />
+                  <span class="font-medium truncate">{{ breakdown.menuItem.name }}</span>
+                </div>
+              </td>
               <td class="px-4 py-3">
                 <span
                   class="px-2 py-1 text-xs rounded-full"
@@ -84,6 +95,7 @@ import { ref, computed } from 'vue'
 import type { MenuCostBreakdown, MenuItem } from '@/types/models'
 import { formatCurrency, saleUnitLabel } from '@/utils/format'
 import EmptyState from '@/components/common/EmptyState.vue'
+import MenuImage from '@/components/menu/MenuImage.vue'
 
 const props = defineProps<{
   breakdowns: MenuCostBreakdown[]
