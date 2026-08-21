@@ -41,6 +41,7 @@ export function mapStoreSettings(row: Record<string, unknown>): StoreSettings {
     targetFoodCostPercent: row.target_food_cost_percent == null ? undefined : num(row.target_food_cost_percent),
     targetMarginPercent: row.target_margin_percent == null ? undefined : num(row.target_margin_percent),
     storeName: optStr(row.store_name),
+    storeDescription: optStr(row.store_description),
     logoUrl: optStr(row.logo_url),
     bannerUrl: optStr(row.banner_url),
     openTime: optTime(row.open_time),

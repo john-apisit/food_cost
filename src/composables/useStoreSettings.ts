@@ -73,6 +73,7 @@ export function useStoreSettings() {
         payload.target_margin_percent = updates.targetMarginPercent ?? null
       }
       if ('storeName' in updates) payload.store_name = updates.storeName?.trim() || null
+      if ('storeDescription' in updates) payload.store_description = updates.storeDescription?.trim() || null
       if ('logoUrl' in updates) payload.logo_url = updates.logoUrl?.trim() || null
       if ('bannerUrl' in updates) payload.banner_url = updates.bannerUrl?.trim() || null
       if ('openTime' in updates) payload.open_time = updates.openTime?.trim() || null

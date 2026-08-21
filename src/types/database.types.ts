@@ -20,6 +20,7 @@ export interface Database {
           target_food_cost_percent: number | null
           target_margin_percent: number | null
           store_name: string | null
+          store_description: string | null
           logo_url: string | null
           banner_url: string | null
           open_time: string | null
@@ -41,6 +42,7 @@ export interface Database {
           target_food_cost_percent?: number | null
           target_margin_percent?: number | null
           store_name?: string | null
+          store_description?: string | null
           logo_url?: string | null
           banner_url?: string | null
           open_time?: string | null
@@ -62,6 +64,7 @@ export interface Database {
           target_food_cost_percent?: number | null
           target_margin_percent?: number | null
           store_name?: string | null
+          store_description?: string | null
           logo_url?: string | null
           banner_url?: string | null
           open_time?: string | null

@@ -14,6 +14,15 @@
             <label class="block text-sm font-medium mb-1">ชื่อร้าน</label>
             <input v-model="form.storeName" class="input-field w-full" placeholder="เช่น ร้านครัวคุณแม่" />
           </div>
+          <div>
+            <label class="block text-sm font-medium mb-1">รายละเอียดร้าน</label>
+            <textarea
+              v-model="form.storeDescription"
+              rows="3"
+              class="input-field w-full"
+              placeholder="เช่น อาหารตามสั่ง รสชาติบ้าน ๆ จานใหญ่ ราคาประหยัด"
+            ></textarea>
+          </div>
 
           <div class="grid sm:grid-cols-2 gap-4">
             <div>
@@ -169,6 +178,7 @@ const { success, error } = useToast()
 
 const form = reactive({
   storeName: '',
+  storeDescription: '',
   logoUrl: '',
   bannerUrl: '',
   openTime: '',
@@ -190,6 +200,7 @@ const mapEmbedUrl = computed(() => googleMapsEmbedUrl(form.googleMapUrl))
 watch(settings, (value) => {
   if (!value) return
   form.storeName = value.storeName || ''
+  form.storeDescription = value.storeDescription || ''
   form.logoUrl = value.logoUrl || ''
   form.bannerUrl = value.bannerUrl || ''
   form.openTime = value.openTime || ''
@@ -216,6 +227,7 @@ const save = async () => {
   try {
     await updateSettings({
       storeName: form.storeName,
+      storeDescription: form.storeDescription,
       logoUrl: form.logoUrl,
       bannerUrl: form.bannerUrl,
       openTime: form.openTime,

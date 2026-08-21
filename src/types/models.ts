@@ -63,6 +63,7 @@ export interface StoreSettings {
   targetFoodCostPercent?: number
   targetMarginPercent?: number
   storeName?: string
+  storeDescription?: string
   logoUrl?: string
   bannerUrl?: string
   openTime?: string
