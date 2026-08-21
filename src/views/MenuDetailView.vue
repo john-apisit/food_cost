@@ -26,6 +26,9 @@
               {{ menuStatusLabel(breakdown.menuItem.status) }} ·
               ราคาขาย {{ formatCurrency(breakdown.menuItem.sellingPrice) }}
             </p>
+            <p v-if="breakdown.menuItem.statusNote" class="mt-1 text-sm text-gray-500">
+              {{ breakdown.menuItem.statusNote }}
+            </p>
           </div>
         </div>
         <router-link :to="`/menu/${breakdown.menuItem.id}/edit`" class="btn-secondary shrink-0">แก้ไขเมนู</router-link>

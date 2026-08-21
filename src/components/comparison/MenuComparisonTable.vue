@@ -72,9 +72,18 @@
                 </span>
               </td>
               <td class="px-4 py-3">
-                <span class="px-2 py-1 text-xs rounded-full" :class="menuStatusBadgeClass(breakdown.menuItem.status)">
-                  {{ menuStatusLabel(breakdown.menuItem.status) }}
-                </span>
+                <div class="space-y-1">
+                  <span class="inline-flex px-2 py-1 text-xs rounded-full" :class="menuStatusBadgeClass(breakdown.menuItem.status)">
+                    {{ menuStatusLabel(breakdown.menuItem.status) }}
+                  </span>
+                  <p
+                    v-if="breakdown.menuItem.statusNote"
+                    class="text-xs text-gray-500 max-w-[12rem] line-clamp-2"
+                    :title="breakdown.menuItem.statusNote"
+                  >
+                    {{ breakdown.menuItem.statusNote }}
+                  </p>
+                </div>
               </td>
               <td class="px-4 py-3 text-right">{{ formatCurrency(breakdown.menuItem.sellingPrice) }}</td>
               <td class="px-4 py-3 text-right">{{ formatCurrency(breakdown.totalCost) }}</td>

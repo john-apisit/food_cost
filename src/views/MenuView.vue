@@ -50,6 +50,9 @@
                 </span>
               </div>
             </div>
+            <p v-if="menu.statusNote" class="text-sm text-gray-500" :title="menu.statusNote">
+              {{ menu.statusNote }}
+            </p>
             <p class="text-sm">ราคาขาย <span class="font-semibold">{{ formatCurrency(menu.sellingPrice) }}</span></p>
             <div class="flex flex-wrap gap-2 text-sm mt-auto">
               <router-link :to="`/menu/${menu.id}`" class="text-primary-600 font-medium">ดูต้นทุน</router-link>

@@ -100,6 +100,7 @@ export function mapMenuItem(row: Record<string, unknown>, nested = true): MenuIt
     category: optStr(row.category),
     imageUrl: optStr(row.image_url),
     status: isMenuStatus(row.status) ? row.status : 'ready_to_sell',
+    statusNote: optStr(row.status_note),
     isActive: Boolean(row.is_active),
     createdAt: String(row.created_at),
     updatedAt: String(row.updated_at),

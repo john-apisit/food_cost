@@ -95,6 +95,7 @@ export function useMenu() {
           category: menuItem.category || null,
           image_url: menuItem.imageUrl || null,
           status: menuItem.status,
+          status_note: menuItem.statusNote || null,
         })
         .select()
         .single()
@@ -149,6 +150,7 @@ export function useMenu() {
           category: updates.category || null,
           image_url: updates.imageUrl || null,
           status: updates.status,
+          status_note: updates.statusNote || null,
         })
         .eq('id', id)
 
@@ -221,6 +223,7 @@ export function useMenu() {
       category: original.category,
       imageUrl: original.imageUrl,
       status: original.status,
+      statusNote: original.statusNote,
       recipeLines: original.recipeLines?.map((line) => ({
         ingredientId: line.ingredientId,
         quantityPerUnit: line.quantityPerUnit,

@@ -45,6 +45,15 @@
                 </option>
               </select>
             </div>
+            <div>
+              <label class="block text-sm font-medium mb-1">โน้ตสถานะ</label>
+              <textarea
+                v-model="form.statusNote"
+                rows="2"
+                class="input-field w-full"
+                :placeholder="statusNotePlaceholder"
+              ></textarea>
+            </div>
           </div>
           <div>
             <label class="block text-sm font-medium mb-1">รูปอาหาร (URL สาธารณะ)</label>
@@ -237,12 +246,20 @@ const form = reactive({
   category: '',
   imageUrl: '',
   status: 'ready_to_sell' as MenuStatus,
+  statusNote: '',
 })
 
 const legacyCategory = computed(() => {
   const current = form.category
   if (!current) return ''
   return (MENU_CATEGORIES as readonly string[]).includes(current) ? '' : current
+})
+
+const statusNotePlaceholder = computed(() => {
+  if (form.status === 'ready_to_sell') return 'เช่น ขายดีช่วงเย็น หรือโน้ตสำหรับทีมครัว'
+  if (form.status === 'testing_recipe') return 'เช่น กำลังปรับความเผ็ด หรือทดลองวัตถุดิบใหม่'
+  if (form.status === 'discontinued') return 'เช่น วัตถุดิบหายาก หรือขายไม่คุ้ม'
+  return 'เช่น ยังขาดวัตถุดิบ รอทดสอบรสชาติ หรือสูตรยังไม่นิ่ง'
 })
 
 usePageTitle(
@@ -346,6 +363,7 @@ const save = async () => {
       category: form.category || undefined,
       imageUrl: form.imageUrl.trim() || undefined,
       status: form.status,
+      statusNote: form.statusNote.trim() || undefined,
       recipeLines: [...allIngredientLines.value, ...packagingLines.value].filter(
         (l) => l.ingredientId && l.quantityPerUnit > 0,
       ),
@@ -386,6 +404,7 @@ onMounted(async () => {
     form.category = menu.category || ''
     form.imageUrl = menu.imageUrl || ''
     form.status = menu.status
+    form.statusNote = menu.statusNote || ''
     const grouped = emptyGroupedLines()
     for (const line of menu.recipeLines || []) {
       if (line.ingredient?.type === 'packaging') continue
