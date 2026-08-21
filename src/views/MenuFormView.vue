@@ -51,21 +51,41 @@
           <router-link to="/packaging" class="underline">ไปเพิ่มที่หน้าบรรจุภัณฑ์</router-link>
         </p>
 
-        <section class="space-y-3">
+        <section class="space-y-4">
           <h2 class="font-semibold">วัตถุดิบในสูตร</h2>
-          <div v-for="(line, index) in ingredientLines" :key="'ing-' + index" class="flex gap-2">
-            <select v-model="line.ingredientId" class="input-field flex-1">
-              <option value="">เลือกวัตถุดิบ...</option>
-              <option v-for="item in foodIngredients" :key="item.id" :value="item.id">
-                {{ item.name }} ({{ item.unit }})
-              </option>
-            </select>
-            <input v-model.number="line.quantityPerUnit" type="number" min="0" step="0.0001" class="input-field w-28" placeholder="ปริมาณ" />
-            <button type="button" class="text-red-600 text-sm" @click="ingredientLines.splice(index, 1)">ลบ</button>
+          <div
+            v-for="cat in INGREDIENT_CATEGORIES"
+            :key="cat"
+            class="space-y-3 rounded-lg border border-gray-100 bg-gray-50/60 p-4"
+          >
+            <h3 class="text-sm font-medium text-gray-700">{{ cat }}</h3>
+            <div
+              v-for="(line, index) in ingredientLinesByCategory[cat]"
+              :key="cat + '-' + index"
+              class="flex gap-2"
+            >
+              <select v-model="line.ingredientId" class="input-field flex-1">
+                <option value="">เลือก{{ cat }}...</option>
+                <option v-for="item in ingredientsFor(cat)" :key="item.id" :value="item.id">
+                  {{ item.name }} ({{ item.unit }})
+                </option>
+              </select>
+              <input
+                v-model.number="line.quantityPerUnit"
+                type="number"
+                min="0"
+                step="0.0001"
+                class="input-field w-28"
+                placeholder="ปริมาณ"
+              />
+              <button type="button" class="text-red-600 text-sm" @click="removeIngredientLine(cat, index)">
+                ลบ
+              </button>
+            </div>
+            <button type="button" class="text-primary-600 text-sm font-medium" @click="addIngredientLine(cat)">
+              + {{ cat === 'อื่นๆ' ? 'เพิ่มรายการอื่นๆ' : `เพิ่ม${cat}` }}
+            </button>
           </div>
-          <button type="button" class="text-primary-600 text-sm font-medium" @click="ingredientLines.push({ ingredientId: '', quantityPerUnit: 0 })">
-            + เพิ่มวัตถุดิบ
-          </button>
         </section>
 
         <section class="space-y-3">
@@ -130,7 +150,25 @@ import { useToast } from '@/composables/useToast'
 import { calculateMenuCost } from '@/utils/costCalculator'
 import { getPackagingPresetLines, missingPresetLabels } from '@/utils/packagingPresets'
 import { formatCurrency } from '@/utils/format'
-import type { MenuItem, SaleUnitType } from '@/types/models'
+import {
+  INGREDIENT_CATEGORIES,
+  isOtherIngredientCategory,
+  type IngredientCategory,
+  type MenuItem,
+  type SaleUnitType,
+} from '@/types/models'
+
+type RecipeLineDraft = { ingredientId: string; quantityPerUnit: number }
+
+const emptyGroupedLines = (): Record<IngredientCategory, RecipeLineDraft[]> => ({
+  เนื้อสัตว์: [],
+  ผัก: [],
+  เครื่องปรุง: [],
+  อื่นๆ: [],
+})
+
+const categoryOf = (category?: string): IngredientCategory =>
+  isOtherIngredientCategory(category) ? 'อื่นๆ' : (category as IngredientCategory)
 
 const route = useRoute()
 const router = useRouter()
@@ -151,13 +189,24 @@ const form = reactive({
   imageUrl: '',
 })
 
-const ingredientLines = ref<Array<{ ingredientId: string; quantityPerUnit: number }>>([
-  { ingredientId: '', quantityPerUnit: 0 },
-])
-const packagingLines = ref<Array<{ ingredientId: string; quantityPerUnit: number }>>([])
+const ingredientLinesByCategory = ref(emptyGroupedLines())
+const packagingLines = ref<RecipeLineDraft[]>([])
 const addons = ref<Array<{ addonMenuItemId: string; quantity: number }>>([])
 
 const foodIngredients = computed(() => ingredients.value.filter((i) => i.type === 'ingredient'))
+const allIngredientLines = computed(() =>
+  INGREDIENT_CATEGORIES.flatMap((cat) => ingredientLinesByCategory.value[cat]),
+)
+const ingredientsFor = (cat: IngredientCategory) =>
+  foodIngredients.value.filter((i) => categoryOf(i.category) === cat)
+
+const addIngredientLine = (cat: IngredientCategory) => {
+  ingredientLinesByCategory.value[cat].push({ ingredientId: '', quantityPerUnit: 0 })
+}
+
+const removeIngredientLine = (cat: IngredientCategory, index: number) => {
+  ingredientLinesByCategory.value[cat].splice(index, 1)
+}
 const packaging = computed(() => ingredients.value.filter((i) => i.type === 'packaging'))
 const addonOptions = computed(() =>
   menuItems.value.filter((m) => m.id !== route.params.id),
@@ -186,7 +235,7 @@ const preview = computed(() => {
     isActive: true,
     createdAt: '',
     updatedAt: '',
-    recipeLines: [...ingredientLines.value, ...packagingLines.value]
+    recipeLines: [...allIngredientLines.value, ...packagingLines.value]
       .filter((l) => l.ingredientId && l.quantityPerUnit > 0)
       .map((l, i) => ({
         id: String(i),
@@ -221,7 +270,7 @@ const save = async () => {
       sellingPrice: form.sellingPrice,
       category: form.category || undefined,
       imageUrl: form.imageUrl.trim() || undefined,
-      recipeLines: [...ingredientLines.value, ...packagingLines.value].filter(
+      recipeLines: [...allIngredientLines.value, ...packagingLines.value].filter(
         (l) => l.ingredientId && l.quantityPerUnit > 0,
       ),
       addons: addons.value.filter((a) => a.addonMenuItemId && a.quantity > 0),
@@ -258,9 +307,15 @@ onMounted(async () => {
     form.sellingPrice = menu.sellingPrice
     form.category = menu.category || ''
     form.imageUrl = menu.imageUrl || ''
-    ingredientLines.value = (menu.recipeLines || [])
-      .filter((l) => l.ingredient?.type !== 'packaging')
-      .map((l) => ({ ingredientId: l.ingredientId, quantityPerUnit: l.quantityPerUnit }))
+    const grouped = emptyGroupedLines()
+    for (const line of menu.recipeLines || []) {
+      if (line.ingredient?.type === 'packaging') continue
+      grouped[categoryOf(line.ingredient?.category)].push({
+        ingredientId: line.ingredientId,
+        quantityPerUnit: line.quantityPerUnit,
+      })
+    }
+    ingredientLinesByCategory.value = grouped
     packagingLines.value = (menu.recipeLines || [])
       .filter((l) => l.ingredient?.type === 'packaging')
       .map((l) => ({ ingredientId: l.ingredientId, quantityPerUnit: l.quantityPerUnit }))
@@ -268,7 +323,6 @@ onMounted(async () => {
       addonMenuItemId: a.addonMenuItemId,
       quantity: a.quantity,
     }))
-    if (!ingredientLines.value.length) ingredientLines.value = [{ ingredientId: '', quantityPerUnit: 0 }]
     appliedPreset.value = true
   }
 })
