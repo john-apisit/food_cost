@@ -20,9 +20,11 @@
         <router-link to="/menu/new" class="btn-primary">เพิ่มเมนูแรก</router-link>
       </EmptyState>
 
-      <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <article v-for="menu in filtered" :key="menu.id" class="card overflow-hidden flex flex-col">
-          <MenuImage :src="menu.imageUrl" :alt="menu.name" />
+          <router-link :to="`/menu/${menu.id}`" class="block hover:opacity-90">
+            <MenuImage :src="menu.imageUrl" :alt="menu.name" />
+          </router-link>
           <div class="p-5 space-y-3 flex-1 flex flex-col">
             <div class="flex justify-between gap-3">
               <div>
