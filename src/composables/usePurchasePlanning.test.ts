@@ -36,6 +36,7 @@ const friedRice: MenuItem = {
   name: 'ข้าวผัดหมู',
   saleUnitType: 'box',
   sellingPrice: 80,
+  status: 'ready_to_sell',
   isActive: true,
   createdAt: '',
   updatedAt: '',

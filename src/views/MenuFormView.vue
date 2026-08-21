@@ -37,6 +37,14 @@
                 <option v-for="cat in MENU_CATEGORIES" :key="cat" :value="cat">{{ cat }}</option>
               </select>
             </div>
+            <div>
+              <label class="block text-sm font-medium mb-1">สถานะ</label>
+              <select v-model="form.status" class="input-field w-full">
+                <option v-for="status in MENU_STATUSES" :key="status" :value="status">
+                  {{ MENU_STATUS_LABELS[status] }}
+                </option>
+              </select>
+            </div>
           </div>
           <div>
             <label class="block text-sm font-medium mb-1">รูปอาหาร (URL สาธารณะ)</label>
@@ -189,9 +197,12 @@ import { formatCurrency } from '@/utils/format'
 import {
   INGREDIENT_CATEGORIES,
   MENU_CATEGORIES,
+  MENU_STATUSES,
+  MENU_STATUS_LABELS,
   isOtherIngredientCategory,
   type IngredientCategory,
   type MenuItem,
+  type MenuStatus,
   type SaleUnitType,
 } from '@/types/models'
 
@@ -225,6 +236,7 @@ const form = reactive({
   sellingPrice: 0,
   category: '',
   imageUrl: '',
+  status: 'ready_to_sell' as MenuStatus,
 })
 
 const legacyCategory = computed(() => {
@@ -293,6 +305,7 @@ const preview = computed(() => {
     name: form.name || 'draft',
     saleUnitType: form.saleUnitType,
     sellingPrice: form.sellingPrice || 0,
+    status: form.status,
     isActive: true,
     createdAt: '',
     updatedAt: '',
@@ -332,6 +345,7 @@ const save = async () => {
       sellingPrice: form.sellingPrice,
       category: form.category || undefined,
       imageUrl: form.imageUrl.trim() || undefined,
+      status: form.status,
       recipeLines: [...allIngredientLines.value, ...packagingLines.value].filter(
         (l) => l.ingredientId && l.quantityPerUnit > 0,
       ),
@@ -371,6 +385,7 @@ onMounted(async () => {
     form.sellingPrice = menu.sellingPrice
     form.category = menu.category || ''
     form.imageUrl = menu.imageUrl || ''
+    form.status = menu.status
     const grouped = emptyGroupedLines()
     for (const line of menu.recipeLines || []) {
       if (line.ingredient?.type === 'packaging') continue

@@ -17,6 +17,11 @@
           <option value="box">กล่อง</option>
           <option value="bag">มัดถุง</option>
         </select>
+        <MultiSelectFilter
+          v-model="filterStatuses"
+          placeholder="ทุกสถานะ"
+          :options="statusOptions"
+        />
       </div>
     </div>
 
@@ -30,6 +35,7 @@
             <tr>
               <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">เมนู</th>
               <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">ประเภท</th>
+              <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">สถานะ</th>
               <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">ราคาขาย</th>
               <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">ต้นทุนรวม</th>
               <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">ค่าบริการ</th>
@@ -65,6 +71,11 @@
                   {{ saleUnitLabel(breakdown.menuItem.saleUnitType) }}
                 </span>
               </td>
+              <td class="px-4 py-3">
+                <span class="px-2 py-1 text-xs rounded-full" :class="menuStatusBadgeClass(breakdown.menuItem.status)">
+                  {{ menuStatusLabel(breakdown.menuItem.status) }}
+                </span>
+              </td>
               <td class="px-4 py-3 text-right">{{ formatCurrency(breakdown.menuItem.sellingPrice) }}</td>
               <td class="px-4 py-3 text-right">{{ formatCurrency(breakdown.totalCost) }}</td>
               <td class="px-4 py-3 text-right text-red-600">{{ formatCurrency(breakdown.platformFee) }}</td>
@@ -92,10 +103,11 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import type { MenuCostBreakdown, MenuItem } from '@/types/models'
-import { formatCurrency, saleUnitLabel } from '@/utils/format'
+import { MENU_STATUSES, MENU_STATUS_LABELS, type MenuCostBreakdown, type MenuItem, type MenuStatus } from '@/types/models'
+import { formatCurrency, menuStatusBadgeClass, menuStatusLabel, saleUnitLabel } from '@/utils/format'
 import EmptyState from '@/components/common/EmptyState.vue'
 import MenuImage from '@/components/menu/MenuImage.vue'
+import MultiSelectFilter from '@/components/common/MultiSelectFilter.vue'
 
 const props = defineProps<{
   breakdowns: MenuCostBreakdown[]
@@ -110,6 +122,12 @@ defineEmits<{
 const sortBy = ref<'netProfit' | 'netMarginPercent' | 'name'>('netProfit')
 const filterCategory = ref('')
 const filterUnitType = ref<'' | 'box' | 'bag'>('')
+const filterStatuses = ref<MenuStatus[]>([])
+
+const statusOptions = MENU_STATUSES.map((status) => ({
+  value: status,
+  label: MENU_STATUS_LABELS[status],
+}))
 
 const categories = computed(() => {
   const cats = new Set<string>()
@@ -123,6 +141,7 @@ const filteredBreakdowns = computed(() => {
   return props.breakdowns.filter((b) => {
     if (filterCategory.value && b.menuItem.category !== filterCategory.value) return false
     if (filterUnitType.value && b.menuItem.saleUnitType !== filterUnitType.value) return false
+    if (filterStatuses.value.length && !filterStatuses.value.includes(b.menuItem.status)) return false
     return true
   })
 })

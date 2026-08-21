@@ -22,7 +22,9 @@
               {{ breakdown.menuItem.description }}
             </p>
             <p class="text-gray-500">
-              {{ saleUnitLabel(breakdown.menuItem.saleUnitType) }} · ราคาขาย {{ formatCurrency(breakdown.menuItem.sellingPrice) }}
+              {{ saleUnitLabel(breakdown.menuItem.saleUnitType) }} ·
+              {{ menuStatusLabel(breakdown.menuItem.status) }} ·
+              ราคาขาย {{ formatCurrency(breakdown.menuItem.sellingPrice) }}
             </p>
           </div>
         </div>
@@ -138,7 +140,7 @@ import MenuImage from '@/components/menu/MenuImage.vue'
 import { useCostBreakdown } from '@/composables/useCostBreakdown'
 import { usePageTitle } from '@/composables/usePageTitle'
 import { calculateSuggestedPrice, simulateSellingPrice } from '@/utils/costCalculator'
-import { formatCurrency, formatNumber, saleUnitLabel } from '@/utils/format'
+import { formatCurrency, formatNumber, menuStatusLabel, saleUnitLabel } from '@/utils/format'
 import {
   INGREDIENT_CATEGORIES,
   isOtherIngredientCategory,

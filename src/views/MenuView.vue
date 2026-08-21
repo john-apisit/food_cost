@@ -13,6 +13,12 @@
           <option value="box">กล่อง</option>
           <option value="bag">มัดถุง</option>
         </select>
+        <select v-model="filterStatus" class="input-field sm:w-44">
+          <option value="">ทุกสถานะ</option>
+          <option v-for="status in MENU_STATUSES" :key="status" :value="status">
+            {{ MENU_STATUS_LABELS[status] }}
+          </option>
+        </select>
       </div>
 
       <div v-if="loading" class="text-gray-500 py-8 text-center">กำลังโหลด...</div>
@@ -32,12 +38,17 @@
                 <p v-if="menu.description" class="mt-0.5 text-sm text-gray-600 line-clamp-2">{{ menu.description }}</p>
                 <p class="text-sm text-gray-500">{{ menu.category || 'ไม่มีหมวดหมู่' }}</p>
               </div>
-              <span
-                class="h-fit px-2 py-1 text-xs rounded-full"
-                :class="menu.saleUnitType === 'box' ? 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800'"
-              >
-                {{ saleUnitLabel(menu.saleUnitType) }}
-              </span>
+              <div class="flex flex-col items-end gap-1 shrink-0">
+                <span
+                  class="h-fit px-2 py-1 text-xs rounded-full"
+                  :class="menu.saleUnitType === 'box' ? 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800'"
+                >
+                  {{ saleUnitLabel(menu.saleUnitType) }}
+                </span>
+                <span class="h-fit px-2 py-1 text-xs rounded-full" :class="menuStatusBadgeClass(menu.status)">
+                  {{ menuStatusLabel(menu.status) }}
+                </span>
+              </div>
             </div>
             <p class="text-sm">ราคาขาย <span class="font-semibold">{{ formatCurrency(menu.sellingPrice) }}</span></p>
             <div class="flex flex-wrap gap-2 text-sm mt-auto">
@@ -60,17 +71,19 @@ import EmptyState from '@/components/common/EmptyState.vue'
 import MenuImage from '@/components/menu/MenuImage.vue'
 import { useMenu } from '@/composables/useMenu'
 import { useToast } from '@/composables/useToast'
-import { formatCurrency, saleUnitLabel } from '@/utils/format'
-import type { MenuItem, SaleUnitType } from '@/types/models'
+import { formatCurrency, menuStatusBadgeClass, menuStatusLabel, saleUnitLabel } from '@/utils/format'
+import { MENU_STATUSES, MENU_STATUS_LABELS, type MenuItem, type MenuStatus, type SaleUnitType } from '@/types/models'
 
 const { menuItems, loading, fetchMenuItems, deleteMenuItem, duplicateMenuItem } = useMenu()
 const { success, error } = useToast()
 const search = ref('')
 const filterUnit = ref<'' | SaleUnitType>('')
+const filterStatus = ref<'' | MenuStatus>('')
 
 const filtered = computed(() =>
   menuItems.value.filter((menu) => {
     if (filterUnit.value && menu.saleUnitType !== filterUnit.value) return false
+    if (filterStatus.value && menu.status !== filterStatus.value) return false
     if (search.value && !menu.name.toLowerCase().includes(search.value.toLowerCase())) return false
     return true
   }),

@@ -1,15 +1,16 @@
-import type {
-  Combo,
-  ComboItem,
-  Ingredient,
-  MenuAddon,
-  MenuItem,
-  PriceHistory,
-  PurchasePlan,
-  PurchasePlanLine,
-  RecipeLine,
-  SalesRecord,
-  StoreSettings,
+import {
+  isMenuStatus,
+  type Combo,
+  type ComboItem,
+  type Ingredient,
+  type MenuAddon,
+  type MenuItem,
+  type PriceHistory,
+  type PurchasePlan,
+  type PurchasePlanLine,
+  type RecipeLine,
+  type SalesRecord,
+  type StoreSettings,
 } from './models'
 
 function num(value: unknown, fallback = 0): number {
@@ -98,6 +99,7 @@ export function mapMenuItem(row: Record<string, unknown>, nested = true): MenuIt
     sellingPrice: num(row.selling_price),
     category: optStr(row.category),
     imageUrl: optStr(row.image_url),
+    status: isMenuStatus(row.status) ? row.status : 'ready_to_sell',
     isActive: Boolean(row.is_active),
     createdAt: String(row.created_at),
     updatedAt: String(row.updated_at),

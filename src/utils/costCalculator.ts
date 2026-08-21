@@ -206,6 +206,7 @@ export function calculateComboCost(
           name: 'ไม่พบเมนู',
           saleUnitType: 'box' as const,
           sellingPrice: 0,
+          status: 'not_ready' as const,
           isActive: false,
           createdAt: '',
           updatedAt: '',

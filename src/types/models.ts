@@ -3,6 +3,22 @@ export type IngredientType = 'ingredient' | 'packaging'
 export const INGREDIENT_CATEGORIES = ['เนื้อสัตว์', 'ผัก', 'เครื่องปรุง', 'อื่นๆ'] as const
 export const PRIMARY_INGREDIENT_CATEGORIES = ['เนื้อสัตว์', 'ผัก', 'เครื่องปรุง'] as const
 export type IngredientCategory = (typeof INGREDIENT_CATEGORIES)[number]
+export const MENU_STATUSES = [
+  'ready_to_sell',
+  'testing_recipe',
+  'not_ready',
+  'discontinued',
+] as const
+export type MenuStatus = (typeof MENU_STATUSES)[number]
+export const MENU_STATUS_LABELS: Record<MenuStatus, string> = {
+  ready_to_sell: 'พร้อมขาย',
+  testing_recipe: 'กำลังทดลองสูตร',
+  not_ready: 'ยังไม่พร้อม',
+  discontinued: 'ยกเลิกขาย',
+}
+export function isMenuStatus(value: unknown): value is MenuStatus {
+  return (MENU_STATUSES as readonly string[]).includes(String(value))
+}
 export const MENU_CATEGORIES = [
   'อาหารจานเดียว',
   'แกง / ต้ม',
@@ -85,6 +101,7 @@ export interface MenuItem {
   sellingPrice: number
   category?: string
   imageUrl?: string
+  status: MenuStatus
   isActive: boolean
   createdAt: string
   updatedAt: string
@@ -209,6 +226,7 @@ export interface MenuFormPayload {
   sellingPrice: number
   category?: string
   imageUrl?: string
+  status: MenuStatus
   recipeLines: Array<{ ingredientId: string; quantityPerUnit: number }>
   addons?: Array<{ addonMenuItemId: string; quantity: number }>
 }

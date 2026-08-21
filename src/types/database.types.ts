@@ -127,6 +127,7 @@ export interface Database {
           selling_price: number
           category: string | null
           image_url: string | null
+          status: 'ready_to_sell' | 'testing_recipe' | 'not_ready' | 'discontinued'
           is_active: boolean
           created_at: string
           updated_at: string
@@ -140,6 +141,7 @@ export interface Database {
           selling_price: number
           category?: string | null
           image_url?: string | null
+          status?: 'ready_to_sell' | 'testing_recipe' | 'not_ready' | 'discontinued'
           is_active?: boolean
           created_at?: string
           updated_at?: string
@@ -153,6 +155,7 @@ export interface Database {
           selling_price?: number
           category?: string | null
           image_url?: string | null
+          status?: 'ready_to_sell' | 'testing_recipe' | 'not_ready' | 'discontinued'
           is_active?: boolean
           created_at?: string
           updated_at?: string
