@@ -42,6 +42,7 @@
               <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">ราคา/หน่วย</th>
               <th v-if="!type" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">ประเภท</th>
               <th v-if="!hideCategory" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">หมวดหมู่</th>
+              <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">ซัพพลายเออร์</th>
               <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">จัดการ</th>
             </tr>
           </thead>
@@ -65,6 +66,7 @@
                 </span>
               </td>
               <td v-if="!hideCategory" class="px-4 py-3 text-gray-500">{{ item.category || '-' }}</td>
+              <td class="px-4 py-3 text-gray-500">{{ item.supplier || '-' }}</td>
               <td class="px-4 py-3 text-right text-sm font-medium whitespace-nowrap">
                 <button type="button" class="text-gray-600 hover:text-gray-900 mr-3" @click="$emit('history', item)">
                   ประวัติราคา
@@ -113,7 +115,11 @@ const filteredItems = computed(() => {
   let result = props.items
   if (searchTerm.value) {
     const q = searchTerm.value.toLowerCase()
-    result = result.filter((item) => item.name.toLowerCase().includes(q))
+    result = result.filter(
+      (item) =>
+        item.name.toLowerCase().includes(q) ||
+        (item.supplier || '').toLowerCase().includes(q),
+    )
   }
   if (filterType.value && !props.type) {
     result = result.filter((item) => item.type === filterType.value)

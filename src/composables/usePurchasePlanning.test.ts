@@ -101,4 +101,60 @@ describe('purchase planning', () => {
     expect(byName[UNSPECIFIED_SUPPLIER].totalCost).toBe(40)
     expect(groups.at(-1)?.supplier).toBe(UNSPECIFIED_SUPPLIER)
   })
+
+  it('includes sale-unit packaging presets when recipe has none', () => {
+    const { calculatePurchaseList } = usePurchasePlanning()
+    const boxPkg: Ingredient = { ...box, id: 'p1', name: 'กล่องข้าว' }
+    const spoon: Ingredient = { ...box, id: 'p2', name: 'ช้อนพลาสติก', unit: 'ชิ้น', pricePerUnit: 1 }
+    const bag: Ingredient = { ...box, id: 'p3', name: 'ถุงใส่กล่องข้าว', unit: 'ใบ', pricePerUnit: 0.5 }
+    const menu: MenuItem = {
+      ...friedRice,
+      recipeLines: [{ id: 'r1', menuItemId: 'm1', ingredientId: 'i1', quantityPerUnit: 0.1, createdAt: '' }],
+    }
+
+    const items = calculatePurchaseList(
+      [{ menuItem: menu, quantity: 10 }],
+      1,
+      [pork, boxPkg, spoon, bag],
+      [menu],
+    )
+
+    expect(items.find((i) => i.ingredient.id === 'i1')?.totalQuantity).toBe(1)
+    expect(items.find((i) => i.ingredient.id === 'p1')?.totalQuantity).toBe(10)
+    expect(items.find((i) => i.ingredient.id === 'p2')?.totalQuantity).toBe(10)
+    expect(items.find((i) => i.ingredient.id === 'p3')?.totalQuantity).toBe(10)
+  })
+
+  it('does not double-count packaging already on the recipe', () => {
+    const { calculatePurchaseList } = usePurchasePlanning()
+    const items = calculatePurchaseList(
+      [{ menuItem: friedRice, quantity: 50 }],
+      5,
+      [pork, box],
+      [friedRice],
+    )
+
+    const boxLine = items.find((i) => i.ingredient.id === 'p1')
+    expect(boxLine?.totalQuantity).toBe(250)
+  })
+
+  it('includes bag packaging preset for bag menus', () => {
+    const { calculatePurchaseList } = usePurchasePlanning()
+    const tieBag: Ingredient = { ...box, id: 'p4', name: 'ถุงมัด', pricePerUnit: 0.8 }
+    const bagMenu: MenuItem = {
+      ...friedRice,
+      id: 'm2',
+      saleUnitType: 'bag',
+      recipeLines: [{ id: 'r1', menuItemId: 'm2', ingredientId: 'i1', quantityPerUnit: 0.1, createdAt: '' }],
+    }
+
+    const items = calculatePurchaseList(
+      [{ menuItem: bagMenu, quantity: 20 }],
+      1,
+      [pork, tieBag],
+      [bagMenu],
+    )
+
+    expect(items.find((i) => i.ingredient.id === 'p4')?.totalQuantity).toBe(20)
+  })
 })

@@ -1,4 +1,5 @@
 import type { Ingredient, MenuItem, PurchaseItem, PurchaseSupplierGroup } from '@/types/models'
+import { getPackagingPresetLines } from '@/utils/packagingPresets'
 
 export const UNSPECIFIED_SUPPLIER = 'ไม่ระบุซัพพลายเออร์'
 
@@ -68,10 +69,20 @@ export function usePurchasePlanning() {
       }
     }
 
+    const packagingCatalog = allIngredients.filter((item) => item.type === 'packaging')
+
     menuSelections.forEach(({ menuItem, quantity }) => {
       const totalQuantity = quantity * days
+      const recipeIngredientIds = new Set(
+        (menuItem.recipeLines || []).map((line) => line.ingredientId),
+      )
 
       menuItem.recipeLines?.forEach((line) => {
+        addIngredientToPurchase(line.ingredientId, line.quantityPerUnit * totalQuantity, menuItem.name)
+      })
+
+      getPackagingPresetLines(menuItem.saleUnitType, packagingCatalog).forEach((line) => {
+        if (recipeIngredientIds.has(line.ingredientId)) return
         addIngredientToPurchase(line.ingredientId, line.quantityPerUnit * totalQuantity, menuItem.name)
       })
 

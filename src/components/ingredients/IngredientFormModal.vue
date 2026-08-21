@@ -39,7 +39,7 @@
         />
       </div>
 
-      <div v-if="type === 'ingredient'">
+      <div>
         <label class="block text-sm font-medium text-gray-700 mb-1">ซัพพลายเออร์</label>
         <input v-model="formData.supplier" type="text" class="input-field w-full" />
       </div>

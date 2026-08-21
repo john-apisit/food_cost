@@ -83,6 +83,7 @@ const save = async (data: {
   unit: string
   pricePerUnit: number
   category?: string
+  supplier?: string
   notes?: string
 }) => {
   saving.value = true

@@ -77,7 +77,7 @@ const router = createRouter({
       path: '/planning',
       name: 'Planning',
       component: () => import('@/views/PlanningView.vue'),
-      meta: { requiresAuth: true, title: 'วางแผนการซื้อวัตถุดิบ' },
+      meta: { requiresAuth: true, title: 'วางแผนการซื้อ' },
     },
     {
       path: '/combos',

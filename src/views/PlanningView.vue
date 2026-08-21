@@ -1,7 +1,7 @@
 <template>
   <MainLayout>
     <div class="space-y-6">
-      <h1 class="page-title">วางแผนการซื้อวัตถุดิบ</h1>
+      <h1 class="page-title">วางแผนการซื้อวัตถุดิบและบรรจุภัณฑ์</h1>
 
       <div class="card p-6 space-y-4">
         <div class="grid sm:grid-cols-2 gap-4">
@@ -62,7 +62,7 @@
             <h2 class="text-lg font-semibold">รายการซื้อตามซัพพลายเออร์</h2>
             <p class="text-sm text-gray-500 mt-1">
               <template v-if="namedSupplierCount">ต้องไปซื้อ {{ namedSupplierCount }} ร้าน · </template>
-              {{ purchaseItems.length }} รายการ
+              วัตถุดิบ {{ ingredientCount }} รายการ · บรรจุภัณฑ์ {{ packagingCount }} รายการ
             </p>
           </div>
           <div class="flex gap-2">
@@ -169,6 +169,12 @@ const totalCost = computed(() => purchaseItems.value.reduce((sum, item) => sum +
 const supplierGroups = computed(() => groupPurchaseItemsBySupplier(purchaseItems.value))
 const namedSupplierCount = computed(
   () => supplierGroups.value.filter((group) => group.supplier !== UNSPECIFIED_SUPPLIER).length,
+)
+const ingredientCount = computed(
+  () => purchaseItems.value.filter((item) => item.ingredient.type === 'ingredient').length,
+)
+const packagingCount = computed(
+  () => purchaseItems.value.filter((item) => item.ingredient.type === 'packaging').length,
 )
 
 const selectedLines = () =>
