@@ -163,6 +163,12 @@
             </table>
           </div>
         </div>
+
+        <div class="flex">
+          <button type="button" class="btn-secondary w-full sm:w-auto" :disabled="!canCalculate" @click="save">
+            บันทึกแผน
+          </button>
+        </div>
       </div>
     </div>
   </MainLayout>
