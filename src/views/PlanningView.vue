@@ -135,7 +135,7 @@
                       <div :class="isPurchased(item.ingredient.id) ? 'text-green-700 font-medium' : ''">
                         {{ item.ingredient.name }}
                       </div>
-                      <div class="text-xs text-gray-500">
+                      <div class="hidden sm:block text-xs text-gray-500">
                         {{ item.fromMenus.map((m) => `${m.menuName} (${formatNumber(m.quantity)})`).join(', ') }}
                       </div>
                     </td>
