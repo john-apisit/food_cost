@@ -82,6 +82,9 @@ export function usePurchasePlans() {
   const savePlan = async (payload: {
     name: string
     days: number
+    purchaseDate?: string | null
+    saleStartDate?: string | null
+    saleEndDate?: string | null
     lines: Array<{ menuItemId: string; targetQuantity: number }>
     purchasedIngredientIds?: string[]
   }) => {
@@ -92,6 +95,11 @@ export function usePurchasePlans() {
       const name = payload.name.trim() || 'แผนซื้อของ'
       const purchasedIngredientIds = payload.purchasedIngredientIds ?? []
       const existingId = await findExistingPlanId(user.value.id, name)
+      const dates = {
+        purchase_date: payload.purchaseDate?.trim() || null,
+        sale_start_date: payload.saleStartDate?.trim() || null,
+        sale_end_date: payload.saleEndDate?.trim() || null,
+      }
 
       let data: Record<string, unknown>
 
@@ -102,6 +110,7 @@ export function usePurchasePlans() {
             days: payload.days,
             is_template: false,
             purchased_ingredient_ids: purchasedIngredientIds,
+            ...dates,
           })
           .eq('id', existingId)
           .select()
@@ -119,6 +128,7 @@ export function usePurchasePlans() {
             days: payload.days,
             is_template: false,
             purchased_ingredient_ids: purchasedIngredientIds,
+            ...dates,
           })
           .select()
           .single()

@@ -23,6 +23,12 @@ function optStr(value: unknown): string | undefined {
   return value == null || value === '' ? undefined : String(value)
 }
 
+function optDate(value: unknown): string | undefined {
+  if (value == null || value === '') return undefined
+  const match = String(value).match(/^(\d{4}-\d{2}-\d{2})/)
+  return match?.[1]
+}
+
 function strList(value: unknown): string[] {
   if (!Array.isArray(value)) return []
   return value.map((item) => String(item).trim()).filter(Boolean)
@@ -197,6 +203,9 @@ export function mapPurchasePlan(row: Record<string, unknown>): PurchasePlan {
     userId: String(row.user_id),
     name: String(row.name),
     days: num(row.days, 1),
+    purchaseDate: optDate(row.purchase_date),
+    saleStartDate: optDate(row.sale_start_date),
+    saleEndDate: optDate(row.sale_end_date),
     isTemplate: Boolean(row.is_template),
     purchasedIngredientIds: Array.isArray(row.purchased_ingredient_ids)
       ? row.purchased_ingredient_ids.map(String)

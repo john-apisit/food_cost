@@ -14,10 +14,13 @@
             >
               <button
                 type="button"
-                class="pl-3 py-1 hover:bg-gray-200"
+                class="pl-3 py-1 hover:bg-gray-200 text-left"
                 @click="loadPlan(plan)"
               >
-                {{ plan.name }}
+                <span class="block">{{ plan.name }}</span>
+                <span v-if="planDatesLabel(plan)" class="block text-xs text-gray-500 font-normal">
+                  {{ planDatesLabel(plan) }}
+                </span>
               </button>
               <button
                 type="button"
@@ -32,14 +35,39 @@
           </div>
         </div>
 
-        <div class="grid sm:grid-cols-2 gap-4">
-          <div>
+        <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div class="sm:col-span-2 lg:col-span-1">
             <label class="block text-sm font-medium mb-1">ชื่อแผน</label>
             <input v-model="planName" class="input-field w-full" placeholder="เช่น แผนวันจันทร์" />
           </div>
           <div>
+            <label class="block text-sm font-medium mb-1">วันที่ไปซื้อ</label>
+            <input v-model="purchaseDate" type="date" class="input-field w-full" />
+          </div>
+          <div>
             <label class="block text-sm font-medium mb-1">จำนวนวัน</label>
-            <input v-model.number="days" type="number" min="1" class="input-field w-32" />
+            <input
+              v-model.number="days"
+              type="number"
+              min="1"
+              class="input-field w-full"
+              :class="hasSaleRange ? 'bg-gray-50' : ''"
+              :readonly="hasSaleRange"
+            />
+            <p v-if="hasSaleRange" class="text-xs text-gray-500 mt-1">คำนวณจากช่วงวันที่ขาย</p>
+          </div>
+          <div class="sm:col-span-2 lg:col-span-3">
+            <label class="block text-sm font-medium mb-1">ช่วงวันที่ขาย</label>
+            <div class="flex flex-col sm:flex-row sm:items-center gap-2">
+              <input v-model="saleStartDate" type="date" class="input-field w-full sm:w-auto" />
+              <span class="text-sm text-gray-500 shrink-0">ถึง</span>
+              <input
+                v-model="saleEndDate"
+                type="date"
+                class="input-field w-full sm:w-auto"
+                :min="saleStartDate || undefined"
+              />
+            </div>
           </div>
         </div>
 
@@ -90,15 +118,20 @@
         <div class="flex flex-col sm:flex-row sm:justify-between sm:items-end gap-3">
           <div>
             <h2 class="text-lg font-semibold">รายการซื้อตามซัพพลายเออร์</h2>
+            <p v-if="periodNote" class="text-sm text-gray-600 mt-1">{{ periodNote }}</p>
             <p class="text-sm text-gray-500 mt-1">
               <template v-if="namedSupplierCount">ต้องไปซื้อ {{ namedSupplierCount }} ร้าน · </template>
               วัตถุดิบ {{ ingredientCount }} รายการ · บรรจุภัณฑ์ {{ packagingCount }} รายการ
             </p>
           </div>
-          <div class="flex gap-2">
-            <button type="button" class="btn-secondary text-sm" @click="exportCsv">Export CSV</button>
-            <button type="button" class="btn-secondary text-sm" @click="exportPdf">Export PDF</button>
-          </div>
+          <label class="inline-flex items-center gap-2 text-sm text-gray-700 shrink-0">
+            <input
+              v-model="showMenus"
+              type="checkbox"
+              class="rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+            />
+            แสดงเมนู
+          </label>
         </div>
 
         <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
@@ -153,7 +186,7 @@
                       <div :class="isPurchased(item.ingredient.id) ? 'text-green-700 font-medium' : ''">
                         {{ item.ingredient.name }}
                       </div>
-                      <div class="hidden sm:block text-xs text-gray-500">
+                      <div v-if="showMenus" class="text-xs text-gray-500">
                         {{ item.fromMenus.map((m) => `${m.menuName} (${formatNumber(m.quantity)})`).join(', ') }}
                       </div>
                     </td>
@@ -193,7 +226,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { X } from 'lucide-vue-next'
 import MainLayout from '@/layouts/MainLayout.vue'
 import { useMenu } from '@/composables/useMenu'
@@ -201,8 +234,14 @@ import { useIngredients } from '@/composables/useIngredients'
 import { groupPurchaseItemsBySupplier, uniquePrepSteps, UNSPECIFIED_SUPPLIER, usePurchasePlanning } from '@/composables/usePurchasePlanning'
 import { usePurchasePlans } from '@/composables/usePurchasePlans'
 import { useToast } from '@/composables/useToast'
-import { exportPurchaseListToCsv, exportPurchaseListToPdf } from '@/utils/export'
-import { formatCurrency, formatNumber, ingredientTypeLabel, saleUnitLabel } from '@/utils/format'
+import {
+  formatCurrency,
+  formatDateOnly,
+  formatNumber,
+  inclusiveDayCount,
+  ingredientTypeLabel,
+  saleUnitLabel,
+} from '@/utils/format'
 import type { PurchaseItem, PurchasePlan } from '@/types/models'
 
 const { menuItems, fetchMenuItems } = useMenu()
@@ -213,12 +252,44 @@ const { success, error } = useToast()
 
 const planName = ref('แผนซื้อของ')
 const days = ref(1)
+const purchaseDate = ref('')
+const saleStartDate = ref('')
+const saleEndDate = ref('')
 const menuSelections = ref([{ menuItemId: '', quantity: 1 }])
 const purchaseItems = ref<PurchaseItem[]>([])
+const showMenus = ref(false)
 const purchasedIds = ref<Set<string>>(new Set())
 const currentPlanId = ref<string | null>(null)
 
+const hasSaleRange = computed(() => Boolean(saleStartDate.value && saleEndDate.value))
 const canCalculate = computed(() => menuSelections.value.some((s) => s.menuItemId && s.quantity > 0))
+
+watch([saleStartDate, saleEndDate], ([start, end]) => {
+  if (start && end) {
+    if (end < start) {
+      saleEndDate.value = start
+      return
+    }
+    days.value = inclusiveDayCount(start, end)
+  }
+})
+
+const planDatesLabel = (plan: PurchasePlan) => {
+  const parts: string[] = []
+  if (plan.purchaseDate) parts.push(`ซื้อ ${formatDateOnly(plan.purchaseDate)}`)
+  if (plan.saleStartDate && plan.saleEndDate) {
+    parts.push(
+      plan.saleStartDate === plan.saleEndDate
+        ? `ขาย ${formatDateOnly(plan.saleStartDate)}`
+        : `ขาย ${formatDateOnly(plan.saleStartDate)}–${formatDateOnly(plan.saleEndDate)}`,
+    )
+  } else if (plan.saleStartDate) {
+    parts.push(`ขายตั้งแต่ ${formatDateOnly(plan.saleStartDate)}`)
+  } else if (plan.saleEndDate) {
+    parts.push(`ขายถึง ${formatDateOnly(plan.saleEndDate)}`)
+  }
+  return parts.join(' · ')
+}
 const totalCost = computed(() => purchaseItems.value.reduce((sum, item) => sum + item.totalCost, 0))
 const supplierGroups = computed(() => groupPurchaseItemsBySupplier(purchaseItems.value))
 const namedSupplierCount = computed(
@@ -251,6 +322,9 @@ const save = async () => {
     const saved = await savePlan({
       name: planName.value || 'แผนซื้อของ',
       days: days.value,
+      purchaseDate: purchaseDate.value || null,
+      saleStartDate: saleStartDate.value || null,
+      saleEndDate: saleEndDate.value || null,
       lines: selectedLines().map((s) => ({
         menuItemId: s.menuItem.id,
         targetQuantity: s.quantity,
@@ -295,6 +369,9 @@ const loadPlan = (plan: PurchasePlan) => {
   currentPlanId.value = plan.id
   planName.value = plan.name
   days.value = plan.days
+  purchaseDate.value = plan.purchaseDate ?? ''
+  saleStartDate.value = plan.saleStartDate ?? ''
+  saleEndDate.value = plan.saleEndDate ?? ''
   menuSelections.value = (plan.lines || []).map((line) => ({
     menuItemId: line.menuItemId,
     quantity: line.targetQuantity,
@@ -304,8 +381,18 @@ const loadPlan = (plan: PurchasePlan) => {
   calculate()
 }
 
-const exportCsv = () => exportPurchaseListToCsv(purchaseItems.value, planName.value, days.value)
-const exportPdf = () => exportPurchaseListToPdf(purchaseItems.value, planName.value, days.value)
+const periodNote = computed(() => {
+  const parts: string[] = []
+  if (purchaseDate.value) parts.push(`ซื้อ ${formatDateOnly(purchaseDate.value)}`)
+  if (saleStartDate.value && saleEndDate.value) {
+    parts.push(
+      saleStartDate.value === saleEndDate.value
+        ? `ขาย ${formatDateOnly(saleStartDate.value)}`
+        : `ขาย ${formatDateOnly(saleStartDate.value)}–${formatDateOnly(saleEndDate.value)}`,
+    )
+  }
+  return parts.join(' · ')
+})
 
 onMounted(async () => {
   await Promise.all([fetchMenuItems(), fetchIngredients(), fetchPlans()])

@@ -198,6 +198,9 @@ export interface PurchasePlan {
   userId: string
   name: string
   days: number
+  purchaseDate?: string
+  saleStartDate?: string
+  saleEndDate?: string
   isTemplate: boolean
   purchasedIngredientIds: string[]
   createdAt: string

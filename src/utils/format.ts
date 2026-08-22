@@ -14,11 +14,32 @@ export function formatNumber(amount: number, digits = 2): string {
   }).format(amount)
 }
 
+export function parseLocalDate(value: string): Date | null {
+  const match = String(value).trim().match(/^(\d{4})-(\d{2})-(\d{2})/)
+  if (!match) return null
+  const date = new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]))
+  return Number.isNaN(date.getTime()) ? null : date
+}
+
 export function formatDate(value: string): string {
   return new Intl.DateTimeFormat('th-TH', {
     dateStyle: 'medium',
     timeStyle: 'short',
   }).format(new Date(value))
+}
+
+export function formatDateOnly(value: string): string {
+  const date = parseLocalDate(value)
+  if (!date) return value
+  return new Intl.DateTimeFormat('th-TH', { dateStyle: 'medium' }).format(date)
+}
+
+export function inclusiveDayCount(start: string, end: string): number {
+  const from = parseLocalDate(start)
+  const to = parseLocalDate(end)
+  if (!from || !to) return 1
+  const diff = Math.round((to.getTime() - from.getTime()) / 86_400_000) + 1
+  return Math.max(1, diff)
 }
 
 export function saleUnitLabel(type: 'box' | 'bag'): string {

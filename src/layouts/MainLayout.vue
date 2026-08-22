@@ -106,14 +106,13 @@ const profileLabel = computed(() => displayName.value || user.value?.email || '�
 
 const navItems = [
   { label: 'หน้าแรก', to: '/dashboard' },
+  { label: 'เมนู', to: '/menu' },
+  { label: 'ชุดโปร', to: '/combos' },
   { label: 'วัตถุดิบ', to: '/ingredients' },
   { label: 'บรรจุภัณฑ์', to: '/packaging' },
-  { label: 'เมนู', to: '/menu' },
-  { label: 'เปรียบเทียบ', to: '/comparison' },
   { label: 'วางแผนซื้อ', to: '/planning' },
-  { label: 'รายได้', to: '/revenue' },
-  { label: 'ชุดโปร', to: '/combos' },
-  { label: 'ยอดขาย', to: '/sales' },
+  { label: 'บันทึกยอดขาย', to: '/sales' },
+  { label: 'คำนวนรายได้', to: '/revenue' },
   { label: 'ตั้งค่า', to: '/settings' },
 ]
 

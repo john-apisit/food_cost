@@ -306,6 +306,9 @@ export interface Database {
           user_id: string
           name: string
           days: number
+          purchase_date: string | null
+          sale_start_date: string | null
+          sale_end_date: string | null
           is_template: boolean
           purchased_ingredient_ids: string[]
           created_at: string
@@ -316,6 +319,9 @@ export interface Database {
           user_id: string
           name: string
           days?: number
+          purchase_date?: string | null
+          sale_start_date?: string | null
+          sale_end_date?: string | null
           is_template?: boolean
           purchased_ingredient_ids?: string[]
           created_at?: string
@@ -326,6 +332,9 @@ export interface Database {
           user_id?: string
           name?: string
           days?: number
+          purchase_date?: string | null
+          sale_start_date?: string | null
+          sale_end_date?: string | null
           is_template?: boolean
           purchased_ingredient_ids?: string[]
           created_at?: string
