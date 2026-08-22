@@ -42,7 +42,7 @@
           </div>
           <div>
             <label class="block text-sm font-medium mb-1">วันที่ไปซื้อ</label>
-            <input v-model="purchaseDate" type="date" class="input-field w-full" />
+            <DatePicker v-model="purchaseDate" placeholder="เลือกวันที่ไปซื้อ" clearable />
           </div>
           <div>
             <label class="block text-sm font-medium mb-1">จำนวนวัน</label>
@@ -59,14 +59,23 @@
           <div class="sm:col-span-2 lg:col-span-3">
             <label class="block text-sm font-medium mb-1">ช่วงวันที่ขาย</label>
             <div class="flex flex-col sm:flex-row sm:items-center gap-2">
-              <input v-model="saleStartDate" type="date" class="input-field w-full sm:w-auto" />
+              <div class="w-full sm:w-52">
+                <DatePicker
+                  v-model="saleStartDate"
+                  :max="saleEndDate || undefined"
+                  placeholder="จากวันที่"
+                  clearable
+                />
+              </div>
               <span class="text-sm text-gray-500 shrink-0">ถึง</span>
-              <input
-                v-model="saleEndDate"
-                type="date"
-                class="input-field w-full sm:w-auto"
-                :min="saleStartDate || undefined"
-              />
+              <div class="w-full sm:w-52">
+                <DatePicker
+                  v-model="saleEndDate"
+                  :min="saleStartDate || undefined"
+                  placeholder="ถึงวันที่"
+                  clearable
+                />
+              </div>
             </div>
           </div>
         </div>
@@ -229,6 +238,7 @@
 import { computed, onMounted, ref, watch } from 'vue'
 import { X } from 'lucide-vue-next'
 import MainLayout from '@/layouts/MainLayout.vue'
+import DatePicker from '@/components/common/DatePicker.vue'
 import { useMenu } from '@/composables/useMenu'
 import { useIngredients } from '@/composables/useIngredients'
 import { groupPurchaseItemsBySupplier, uniquePrepSteps, UNSPECIFIED_SUPPLIER, usePurchasePlanning } from '@/composables/usePurchasePlanning'

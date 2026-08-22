@@ -2,7 +2,7 @@
   <div ref="root" class="relative">
     <button
       type="button"
-      class="input-field w-full bg-white px-3 py-2 text-left flex items-center justify-between gap-2"
+      class="input-field w-full border rounded-lg bg-white px-3 py-2 text-left flex items-center justify-between gap-2"
       :class="disabled ? 'bg-gray-50 text-gray-400 cursor-not-allowed' : ''"
       :aria-expanded="open"
       :aria-haspopup="true"
