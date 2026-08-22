@@ -77,6 +77,8 @@
         </div>
       </div>
 
+      <DashboardSalesCharts />
+
       <div v-if="notifications.length" class="card p-5 space-y-3">
         <h2 class="text-lg font-bold">ต้องดู</h2>
         <ul class="space-y-2">
@@ -131,6 +133,7 @@ import { computed, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { Store } from 'lucide-vue-next'
 import MainLayout from '@/layouts/MainLayout.vue'
+import DashboardSalesCharts from '@/components/dashboard/DashboardSalesCharts.vue'
 import MenuComparisonTable from '@/components/comparison/MenuComparisonTable.vue'
 import ComboComparisonTable from '@/components/comparison/ComboComparisonTable.vue'
 import { useCostBreakdown } from '@/composables/useCostBreakdown'
