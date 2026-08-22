@@ -251,6 +251,10 @@ export interface Database {
           id: string
           user_id: string
           name: string
+          description: string | null
+          image_url: string | null
+          status: 'ready_to_sell' | 'testing_recipe' | 'not_ready' | 'discontinued'
+          status_note: string | null
           selling_price: number
           is_active: boolean
           created_at: string
@@ -260,6 +264,10 @@ export interface Database {
           id?: string
           user_id: string
           name: string
+          description?: string | null
+          image_url?: string | null
+          status?: 'ready_to_sell' | 'testing_recipe' | 'not_ready' | 'discontinued'
+          status_note?: string | null
           selling_price: number
           is_active?: boolean
           created_at?: string
@@ -269,6 +277,10 @@ export interface Database {
           id?: string
           user_id?: string
           name?: string
+          description?: string | null
+          image_url?: string | null
+          status?: 'ready_to_sell' | 'testing_recipe' | 'not_ready' | 'discontinued'
+          status_note?: string | null
           selling_price?: number
           is_active?: boolean
           created_at?: string

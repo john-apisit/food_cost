@@ -1,6 +1,6 @@
 import { ref } from 'vue'
 import { supabase } from '@/config/supabase'
-import type { Combo } from '@/types/models'
+import type { Combo, ComboFormPayload } from '@/types/models'
 import { mapCombo } from '@/types/mappers'
 import { useAuth } from './useAuth'
 
@@ -57,11 +57,7 @@ export function useCombos() {
     }
   }
 
-  const createCombo = async (payload: {
-    name: string
-    sellingPrice: number
-    items: Array<{ menuItemId: string; quantity: number }>
-  }) => {
+  const createCombo = async (payload: ComboFormPayload) => {
     if (!user.value) return
     loading.value = true
 
@@ -71,6 +67,10 @@ export function useCombos() {
         .insert({
           user_id: user.value.id,
           name: payload.name,
+          description: payload.description || null,
+          image_url: payload.imageUrl || null,
+          status: payload.status,
+          status_note: payload.statusNote || null,
           selling_price: payload.sellingPrice,
         })
         .select()
@@ -98,19 +98,19 @@ export function useCombos() {
     }
   }
 
-  const updateCombo = async (
-    id: string,
-    payload: {
-      name: string
-      sellingPrice: number
-      items: Array<{ menuItemId: string; quantity: number }>
-    },
-  ) => {
+  const updateCombo = async (id: string, payload: ComboFormPayload) => {
     loading.value = true
     try {
       const { error: updateError } = await supabase
         .from('combos')
-        .update({ name: payload.name, selling_price: payload.sellingPrice })
+        .update({
+          name: payload.name,
+          description: payload.description || null,
+          image_url: payload.imageUrl || null,
+          status: payload.status,
+          status_note: payload.statusNote || null,
+          selling_price: payload.sellingPrice,
+        })
         .eq('id', id)
       if (updateError) throw updateError
 

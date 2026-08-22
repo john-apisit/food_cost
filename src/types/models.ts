@@ -161,6 +161,10 @@ export interface Combo {
   id: string
   userId: string
   name: string
+  description?: string
+  imageUrl?: string
+  status: MenuStatus
+  statusNote?: string
   sellingPrice: number
   isActive: boolean
   createdAt: string
@@ -264,4 +268,14 @@ export interface MenuFormPayload {
   prepSteps?: string[]
   recipeLines: Array<{ ingredientId: string; quantityPerUnit: number }>
   addons?: Array<{ addonMenuItemId: string; quantity: number }>
+}
+
+export interface ComboFormPayload {
+  name: string
+  description?: string
+  imageUrl?: string
+  status: MenuStatus
+  statusNote?: string
+  sellingPrice: number
+  items: Array<{ menuItemId: string; quantity: number }>
 }
