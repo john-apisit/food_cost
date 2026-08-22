@@ -1,10 +1,17 @@
 import { computed } from 'vue'
-import type { AppNotification, Ingredient, MenuCostBreakdown, StoreSettings } from '@/types/models'
+import type {
+  AppNotification,
+  ComboCostBreakdown,
+  Ingredient,
+  MenuCostBreakdown,
+  StoreSettings,
+} from '@/types/models'
 
 export function useNotifications(
   ingredients: () => Ingredient[],
   breakdowns: () => MenuCostBreakdown[],
   settings: () => StoreSettings | null,
+  comboBreakdowns: () => ComboCostBreakdown[] = () => [],
 ) {
   const notifications = computed<AppNotification[]>(() => {
     const items: AppNotification[] = []
@@ -29,6 +36,17 @@ export function useNotifications(
           type: 'danger',
           title: 'Margin ติดลบ',
           message: `${b.menuItem.name} ขาดทุน ${b.netProfit.toFixed(2)} บาท`,
+        })
+      })
+
+    comboBreakdowns()
+      .filter((b) => b.netProfit < 0)
+      .forEach((b) => {
+        items.push({
+          id: `neg-combo-${b.combo.id}`,
+          type: 'danger',
+          title: 'ชุดโปรติดลบ',
+          message: `${b.combo.name} ขาดทุน ${b.netProfit.toFixed(2)} บาท`,
         })
       })
 

@@ -183,6 +183,7 @@ export interface ComboCostBreakdown {
   netRevenue: number
   netProfit: number
   netMarginPercent: number
+  individualSellingTotal: number
   itemBreakdowns: Array<{
     menuItem: MenuItem
     quantity: number

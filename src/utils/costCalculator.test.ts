@@ -1,11 +1,13 @@
 import { describe, expect, it } from 'vitest'
 import {
+  calculateComboCost,
   calculateMenuCost,
   calculateSuggestedPrice,
+  simulateComboFromMenuBreakdowns,
   simulateIngredientPriceChange,
   simulateSellingPrice,
 } from './costCalculator'
-import type { Ingredient, MenuItem, StoreSettings } from '@/types/models'
+import type { Combo, Ingredient, MenuItem, StoreSettings } from '@/types/models'
 
 const settings: StoreSettings = {
   id: 's1',
@@ -126,6 +128,32 @@ describe('calculateSuggestedPrice', () => {
   })
 })
 
+describe('calculateComboCost', () => {
+  it('sums item costs and applies platform fee on the combo price', () => {
+    const combo: Combo = {
+      id: 'c1',
+      userId: 'u1',
+      name: 'ชุดกะเพรา + ไข่ดาว',
+      sellingPrice: 90,
+      isActive: true,
+      createdAt: '',
+      updatedAt: '',
+      items: [
+        { id: 'ci1', comboId: 'c1', menuItemId: 'm1', quantity: 1, createdAt: '', menuItem: basilPork },
+        { id: 'ci2', comboId: 'c1', menuItemId: 'm2', quantity: 1, createdAt: '', menuItem: friedEgg },
+      ],
+    }
+
+    const result = calculateComboCost(combo, settings, [pork, egg, box], [basilPork, friedEgg])
+    expect(result.totalCost).toBe(37)
+    expect(result.individualSellingTotal).toBe(110)
+    expect(result.platformFee).toBe(27)
+    expect(result.netRevenue).toBe(63)
+    expect(result.netProfit).toBe(26)
+    expect(result.netMarginPercent).toBeCloseTo(28.89, 1)
+  })
+})
+
 describe('what-if helpers', () => {
   it('simulates ingredient price increase', () => {
     const base = calculateMenuCost(basilPork, settings, [pork, egg, box], [basilPork, friedEgg])
@@ -139,5 +167,30 @@ describe('what-if helpers', () => {
     const sim = simulateSellingPrice(base, 120, 30)
     expect(sim.platformFee).toBeCloseTo(36)
     expect(sim.netRevenue).toBeCloseTo(84)
+  })
+
+  it('simulates combo cost from updated menu breakdowns', () => {
+    const combo: Combo = {
+      id: 'c1',
+      userId: 'u1',
+      name: 'ชุดกะเพรา + ไข่ดาว',
+      sellingPrice: 90,
+      isActive: true,
+      createdAt: '',
+      updatedAt: '',
+      items: [
+        { id: 'ci1', comboId: 'c1', menuItemId: 'm1', quantity: 1, createdAt: '', menuItem: basilPork },
+        { id: 'ci2', comboId: 'c1', menuItemId: 'm2', quantity: 1, createdAt: '', menuItem: friedEgg },
+      ],
+    }
+    const menus = [basilPork, friedEgg]
+    const ingredients = [pork, egg, box]
+    const comboBase = calculateComboCost(combo, settings, ingredients, menus)
+    const simulatedMenus = menus.map((menu) =>
+      simulateIngredientPriceChange(calculateMenuCost(menu, settings, ingredients, menus), 10),
+    )
+    const sim = simulateComboFromMenuBreakdowns(comboBase, simulatedMenus)
+    expect(sim.totalCost).toBeGreaterThan(comboBase.totalCost)
+    expect(sim.netProfit).toBeLessThan(comboBase.netProfit)
   })
 })

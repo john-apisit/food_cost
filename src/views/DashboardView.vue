@@ -52,7 +52,7 @@
 
       <div v-if="loading" class="text-gray-500">กำลังโหลด...</div>
 
-      <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
         <div class="card p-5">
           <h3 class="text-gray-500 text-sm font-medium">วัตถุดิบ</h3>
           <p class="text-3xl font-bold mt-2">{{ ingredientCount }}</p>
@@ -60,6 +60,10 @@
         <div class="card p-5">
           <h3 class="text-gray-500 text-sm font-medium">เมนูที่ขายอยู่</h3>
           <p class="text-3xl font-bold mt-2">{{ menuItems.length }}</p>
+        </div>
+        <div class="card p-5">
+          <h3 class="text-gray-500 text-sm font-medium">ชุดโปร</h3>
+          <p class="text-3xl font-bold mt-2">{{ combos.length }}</p>
         </div>
         <div class="card p-5">
           <h3 class="text-gray-500 text-sm font-medium">Margin เฉลี่ย</h3>
@@ -93,9 +97,10 @@
 
       <div class="card p-5">
         <h2 class="text-lg font-bold mb-4">ทางลัด</h2>
-        <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-3">
+        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
           <router-link to="/ingredients" class="btn-secondary text-center">เพิ่มวัตถุดิบ</router-link>
           <router-link to="/menu/new" class="btn-secondary text-center">เพิ่มเมนู</router-link>
+          <router-link to="/combos" class="btn-secondary text-center">สร้างชุดโปร</router-link>
           <router-link to="/comparison" class="btn-secondary text-center">เปรียบเทียบเมนู</router-link>
           <router-link to="/planning" class="btn-secondary text-center">วางแผนซื้อ</router-link>
           <router-link to="/revenue" class="btn-secondary text-center">ประมาณการรายได้</router-link>
@@ -109,6 +114,14 @@
         :target-margin="settings?.targetMarginPercent"
         @select="goToMenu"
       />
+
+      <ComboComparisonTable
+        v-if="!loading"
+        :breakdowns="comboBreakdowns"
+        :loading="false"
+        :target-margin="settings?.targetMarginPercent"
+        @select="goToCombos"
+      />
     </div>
   </MainLayout>
 </template>
@@ -119,16 +132,18 @@ import { useRouter } from 'vue-router'
 import { Store } from 'lucide-vue-next'
 import MainLayout from '@/layouts/MainLayout.vue'
 import MenuComparisonTable from '@/components/comparison/MenuComparisonTable.vue'
+import ComboComparisonTable from '@/components/comparison/ComboComparisonTable.vue'
 import { useCostBreakdown } from '@/composables/useCostBreakdown'
 import { useNotifications } from '@/composables/useNotifications'
 import type { MenuItem } from '@/types/models'
 
 const router = useRouter()
-const { breakdowns, loading, loadAll, menuItems, ingredients, settings } = useCostBreakdown()
+const { breakdowns, comboBreakdowns, loading, loadAll, menuItems, ingredients, settings, combos } = useCostBreakdown()
 const { notifications } = useNotifications(
   () => ingredients.value,
   () => breakdowns.value,
   () => settings.value,
+  () => comboBreakdowns.value,
 )
 
 const bannerBroken = ref(false)
@@ -159,6 +174,7 @@ const avgMargin = computed(() => {
   return breakdowns.value.reduce((sum, b) => sum + b.netMarginPercent, 0) / breakdowns.value.length
 })
 const goToMenu = (menu: MenuItem) => router.push(`/menu/${menu.id}`)
+const goToCombos = () => router.push('/combos')
 
 onMounted(() => {
   loadAll()

@@ -227,6 +227,10 @@ export function calculateComboCost(
   })
 
   const totalCost = itemBreakdowns.reduce((sum, item) => sum + item.lineCost, 0)
+  const individualSellingTotal = itemBreakdowns.reduce(
+    (sum, item) => sum + item.menuItem.sellingPrice * item.quantity,
+    0,
+  )
   const platformFee = combo.sellingPrice * (storeSettings.platformFeePercent / 100)
   const netRevenue = combo.sellingPrice - platformFee
   const netProfit = netRevenue - totalCost
@@ -237,6 +241,36 @@ export function calculateComboCost(
     totalCost,
     platformFee,
     netRevenue,
+    netProfit,
+    netMarginPercent,
+    individualSellingTotal,
+    itemBreakdowns,
+  }
+}
+
+export function simulateComboFromMenuBreakdowns(
+  comboBreakdown: ComboCostBreakdown,
+  simulatedMenus: MenuCostBreakdown[],
+): ComboCostBreakdown {
+  const byId = new Map(simulatedMenus.map((row) => [row.menuItem.id, row]))
+  const itemBreakdowns = comboBreakdown.itemBreakdowns.map((item) => {
+    const simulated = byId.get(item.menuItem.id)
+    if (!simulated) return item
+    return {
+      ...item,
+      unitCost: simulated.totalCost,
+      lineCost: simulated.totalCost * item.quantity,
+    }
+  })
+
+  const totalCost = itemBreakdowns.reduce((sum, item) => sum + item.lineCost, 0)
+  const netProfit = comboBreakdown.netRevenue - totalCost
+  const sellingPrice = comboBreakdown.combo.sellingPrice
+  const netMarginPercent = sellingPrice > 0 ? (netProfit / sellingPrice) * 100 : 0
+
+  return {
+    ...comboBreakdown,
+    totalCost,
     netProfit,
     netMarginPercent,
     itemBreakdowns,
