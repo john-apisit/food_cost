@@ -40,42 +40,96 @@ export function usePurchasePlans() {
     }
   }
 
+  const replacePlanLines = async (
+    planId: string,
+    lines: Array<{ menuItemId: string; targetQuantity: number }>,
+  ) => {
+    const { error: deleteLinesError } = await supabase
+      .from('purchase_plan_lines')
+      .delete()
+      .eq('plan_id', planId)
+    if (deleteLinesError) throw deleteLinesError
+
+    if (lines.length === 0) return
+
+    const { error: lineError } = await supabase.from('purchase_plan_lines').insert(
+      lines.map((line) => ({
+        plan_id: planId,
+        menu_item_id: line.menuItemId,
+        target_quantity: line.targetQuantity,
+      })),
+    )
+    if (lineError) throw lineError
+  }
+
+  const findExistingPlanId = async (userId: string, name: string) => {
+    const localMatch = plans.value.find((plan) => plan.name.trim() === name)
+    if (localMatch) return localMatch.id
+
+    const { data, error: existingError } = await supabase
+      .from('purchase_plans')
+      .select('id')
+      .eq('user_id', userId)
+      .eq('name', name)
+      .order('updated_at', { ascending: false })
+      .limit(1)
+      .maybeSingle()
+
+    if (existingError) throw existingError
+    return data?.id ?? null
+  }
+
   const savePlan = async (payload: {
     name: string
     days: number
-    isTemplate: boolean
     lines: Array<{ menuItemId: string; targetQuantity: number }>
+    purchasedIngredientIds?: string[]
   }) => {
     if (!user.value) return
     loading.value = true
 
     try {
-      const { data, error: insertError } = await supabase
-        .from('purchase_plans')
-        .insert({
-          user_id: user.value.id,
-          name: payload.name,
-          days: payload.days,
-          is_template: payload.isTemplate,
-        })
-        .select()
-        .single()
+      const name = payload.name.trim() || 'แผนซื้อของ'
+      const purchasedIngredientIds = payload.purchasedIngredientIds ?? []
+      const existingId = await findExistingPlanId(user.value.id, name)
 
-      if (insertError) throw insertError
+      let data: Record<string, unknown>
 
-      if (payload.lines.length > 0) {
-        const { error: lineError } = await supabase.from('purchase_plan_lines').insert(
-          payload.lines.map((line) => ({
-            plan_id: data.id,
-            menu_item_id: line.menuItemId,
-            target_quantity: line.targetQuantity,
-          })),
-        )
-        if (lineError) throw lineError
+      if (existingId) {
+        const { data: updated, error: updateError } = await supabase
+          .from('purchase_plans')
+          .update({
+            days: payload.days,
+            is_template: false,
+            purchased_ingredient_ids: purchasedIngredientIds,
+          })
+          .eq('id', existingId)
+          .select()
+          .single()
+
+        if (updateError) throw updateError
+        data = updated as Record<string, unknown>
+        await replacePlanLines(existingId, payload.lines)
+      } else {
+        const { data: inserted, error: insertError } = await supabase
+          .from('purchase_plans')
+          .insert({
+            user_id: user.value.id,
+            name,
+            days: payload.days,
+            is_template: false,
+            purchased_ingredient_ids: purchasedIngredientIds,
+          })
+          .select()
+          .single()
+
+        if (insertError) throw insertError
+        data = inserted as Record<string, unknown>
+        await replacePlanLines(inserted.id, payload.lines)
       }
 
       await fetchPlans()
-      return mapPurchasePlan(data as Record<string, unknown>)
+      return mapPurchasePlan(data)
     } catch (e: unknown) {
       error.value = e instanceof Error ? e.message : 'บันทึกแผนไม่สำเร็จ'
       throw e
@@ -84,11 +138,23 @@ export function usePurchasePlans() {
     }
   }
 
+  const updatePurchasedIngredientIds = async (planId: string, ingredientIds: string[]) => {
+    const { error: updateError } = await supabase
+      .from('purchase_plans')
+      .update({ purchased_ingredient_ids: ingredientIds })
+      .eq('id', planId)
+    if (updateError) throw updateError
+
+    plans.value = plans.value.map((plan) =>
+      plan.id === planId ? { ...plan, purchasedIngredientIds: ingredientIds } : plan,
+    )
+  }
+
   const deletePlan = async (id: string) => {
     const { error: deleteError } = await supabase.from('purchase_plans').delete().eq('id', id)
     if (deleteError) throw deleteError
     plans.value = plans.value.filter((p) => p.id !== id)
   }
 
-  return { plans, loading, error, fetchPlans, savePlan, deletePlan }
+  return { plans, loading, error, fetchPlans, savePlan, updatePurchasedIngredientIds, deletePlan }
 }

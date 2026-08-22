@@ -197,6 +197,7 @@ export interface PurchasePlan {
   name: string
   days: number
   isTemplate: boolean
+  purchasedIngredientIds: string[]
   createdAt: string
   updatedAt: string
   lines?: PurchasePlanLine[]

@@ -192,6 +192,9 @@ export function mapPurchasePlan(row: Record<string, unknown>): PurchasePlan {
     name: String(row.name),
     days: num(row.days, 1),
     isTemplate: Boolean(row.is_template),
+    purchasedIngredientIds: Array.isArray(row.purchased_ingredient_ids)
+      ? row.purchased_ingredient_ids.map(String)
+      : [],
     createdAt: String(row.created_at),
     updatedAt: String(row.updated_at),
     lines: Array.isArray(linesRaw)

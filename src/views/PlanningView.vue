@@ -4,6 +4,34 @@
       <h1 class="page-title">วางแผนการซื้อวัตถุดิบและบรรจุภัณฑ์</h1>
 
       <div class="card p-6 space-y-4">
+        <div v-if="plans.length">
+          <p class="text-sm font-medium mb-2">โหลดแผนที่บันทึกไว้</p>
+          <div class="flex flex-wrap gap-2">
+            <span
+              v-for="plan in plans"
+              :key="plan.id"
+              class="inline-flex items-center rounded-full bg-gray-100 text-sm overflow-hidden"
+            >
+              <button
+                type="button"
+                class="pl-3 py-1 hover:bg-gray-200"
+                @click="loadPlan(plan)"
+              >
+                {{ plan.name }}
+              </button>
+              <button
+                type="button"
+                class="px-2 py-1 text-gray-400 hover:text-red-600 hover:bg-red-50"
+                :title="`ลบแผน ${plan.name}`"
+                :aria-label="`ลบแผน ${plan.name}`"
+                @click="removePlan(plan)"
+              >
+                <X class="h-3.5 w-3.5" />
+              </button>
+            </span>
+          </div>
+        </div>
+
         <div class="grid sm:grid-cols-2 gap-4">
           <div>
             <label class="block text-sm font-medium mb-1">ชื่อแผน</label>
@@ -36,23 +64,7 @@
 
         <div class="flex flex-wrap gap-2">
           <button type="button" class="btn-primary" :disabled="!canCalculate" @click="calculate">คำนวณรายการซื้อ</button>
-          <button type="button" class="btn-secondary" :disabled="!canCalculate" @click="save(false)">บันทึกแผน</button>
-          <button type="button" class="btn-secondary" :disabled="!canCalculate" @click="save(true)">บันทึกเป็นเทมเพลต</button>
-        </div>
-
-        <div v-if="plans.length" class="border-t pt-4">
-          <p class="text-sm font-medium mb-2">โหลดแผนที่บันทึกไว้</p>
-          <div class="flex flex-wrap gap-2">
-            <button
-              v-for="plan in plans"
-              :key="plan.id"
-              type="button"
-              class="px-3 py-1 rounded-full bg-gray-100 text-sm hover:bg-gray-200"
-              @click="loadPlan(plan)"
-            >
-              {{ plan.name }}{{ plan.isTemplate ? ' (เทมเพลต)' : '' }}
-            </button>
-          </div>
+          <button type="button" class="btn-secondary" :disabled="!canCalculate" @click="save">บันทึกแผน</button>
         </div>
       </div>
 
@@ -84,6 +96,9 @@
             <table class="min-w-full divide-y divide-gray-200 text-sm">
               <thead class="bg-gray-50">
                 <tr>
+                  <th class="px-3 py-3 w-10">
+                    <span class="sr-only">ซื้อแล้ว</span>
+                  </th>
                   <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">รายการ</th>
                   <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">ประเภท</th>
                   <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">ปริมาณรวม</th>
@@ -95,7 +110,7 @@
               <tbody>
                 <template v-for="group in supplierGroups" :key="group.supplier">
                   <tr class="bg-primary-50">
-                    <td colspan="5" class="px-4 py-2.5 font-semibold text-gray-900">
+                    <td colspan="6" class="px-4 py-2.5 font-semibold text-gray-900">
                       {{ group.supplier }}
                       <span class="ml-2 text-xs font-normal text-gray-500">{{ group.items.length }} รายการ</span>
                     </td>
@@ -105,9 +120,21 @@
                     v-for="item in group.items"
                     :key="item.ingredient.id"
                     class="border-t border-gray-100"
+                    :class="isPurchased(item.ingredient.id) ? 'bg-green-50' : ''"
                   >
+                    <td class="px-3 py-3">
+                      <input
+                        type="checkbox"
+                        class="rounded border-gray-300 text-green-600 focus:ring-green-500"
+                        :checked="isPurchased(item.ingredient.id)"
+                        :aria-label="`ซื้อแล้ว ${item.ingredient.name}`"
+                        @change="togglePurchased(item.ingredient.id)"
+                      />
+                    </td>
                     <td class="px-4 py-3">
-                      <div>{{ item.ingredient.name }}</div>
+                      <div :class="isPurchased(item.ingredient.id) ? 'text-green-700 font-medium' : ''">
+                        {{ item.ingredient.name }}
+                      </div>
                       <div class="text-xs text-gray-500">
                         {{ item.fromMenus.map((m) => `${m.menuName} (${formatNumber(m.quantity)})`).join(', ') }}
                       </div>
@@ -129,7 +156,7 @@
               </tbody>
               <tfoot class="bg-gray-50 border-t">
                 <tr>
-                  <td colspan="5" class="px-4 py-4 text-right font-bold">รวมงบซื้อทั้งหมด</td>
+                  <td colspan="6" class="px-4 py-4 text-right font-bold">รวมงบซื้อทั้งหมด</td>
                   <td class="px-4 py-4 text-right font-bold text-lg text-primary-600">{{ formatCurrency(totalCost) }}</td>
                 </tr>
               </tfoot>
@@ -143,6 +170,7 @@
 
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
+import { X } from 'lucide-vue-next'
 import MainLayout from '@/layouts/MainLayout.vue'
 import { useMenu } from '@/composables/useMenu'
 import { useIngredients } from '@/composables/useIngredients'
@@ -156,13 +184,15 @@ import type { PurchaseItem, PurchasePlan } from '@/types/models'
 const { menuItems, fetchMenuItems } = useMenu()
 const { ingredients, fetchIngredients } = useIngredients()
 const { calculatePurchaseList } = usePurchasePlanning()
-const { plans, fetchPlans, savePlan } = usePurchasePlans()
+const { plans, fetchPlans, savePlan, updatePurchasedIngredientIds, deletePlan } = usePurchasePlans()
 const { success, error } = useToast()
 
 const planName = ref('แผนซื้อของ')
 const days = ref(1)
 const menuSelections = ref([{ menuItemId: '', quantity: 1 }])
 const purchaseItems = ref<PurchaseItem[]>([])
+const purchasedIds = ref<Set<string>>(new Set())
+const currentPlanId = ref<string | null>(null)
 
 const canCalculate = computed(() => menuSelections.value.some((s) => s.menuItemId && s.quantity > 0))
 const totalCost = computed(() => purchaseItems.value.reduce((sum, item) => sum + item.totalCost, 0))
@@ -189,25 +219,54 @@ const calculate = () => {
   purchaseItems.value = calculatePurchaseList(selectedLines(), days.value, ingredients.value, menuItems.value)
 }
 
-const save = async (isTemplate: boolean) => {
+const save = async () => {
   try {
     calculate()
-    await savePlan({
+    const saved = await savePlan({
       name: planName.value || 'แผนซื้อของ',
       days: days.value,
-      isTemplate,
       lines: selectedLines().map((s) => ({
         menuItemId: s.menuItem.id,
         targetQuantity: s.quantity,
       })),
+      purchasedIngredientIds: [...purchasedIds.value],
     })
-    success(isTemplate ? 'บันทึกเทมเพลตแล้ว' : 'บันทึกแผนแล้ว')
+    if (saved) currentPlanId.value = saved.id
+    success('บันทึกแผนแล้ว')
   } catch (e: unknown) {
     error(e instanceof Error ? e.message : 'บันทึกไม่สำเร็จ')
   }
 }
 
+const isPurchased = (id: string) => purchasedIds.value.has(id)
+
+const togglePurchased = async (id: string) => {
+  const next = new Set(purchasedIds.value)
+  if (next.has(id)) next.delete(id)
+  else next.add(id)
+  purchasedIds.value = next
+
+  if (!currentPlanId.value) return
+  try {
+    await updatePurchasedIngredientIds(currentPlanId.value, [...next])
+  } catch (e: unknown) {
+    error(e instanceof Error ? e.message : 'บันทึกสถานะไม่สำเร็จ')
+  }
+}
+
+const removePlan = async (plan: PurchasePlan) => {
+  if (!confirm(`ลบแผน ${plan.name}?`)) return
+  try {
+    await deletePlan(plan.id)
+    if (currentPlanId.value === plan.id) currentPlanId.value = null
+    success('ลบแผนแล้ว')
+  } catch (e: unknown) {
+    error(e instanceof Error ? e.message : 'ลบแผนไม่สำเร็จ')
+  }
+}
+
 const loadPlan = (plan: PurchasePlan) => {
+  currentPlanId.value = plan.id
   planName.value = plan.name
   days.value = plan.days
   menuSelections.value = (plan.lines || []).map((line) => ({
@@ -215,6 +274,7 @@ const loadPlan = (plan: PurchasePlan) => {
     quantity: line.targetQuantity,
   }))
   if (!menuSelections.value.length) menuSelections.value = [{ menuItemId: '', quantity: 1 }]
+  purchasedIds.value = new Set(plan.purchasedIngredientIds)
   calculate()
 }
 

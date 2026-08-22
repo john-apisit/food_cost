@@ -304,6 +304,7 @@ export interface Database {
           name: string
           days: number
           is_template: boolean
+          purchased_ingredient_ids: string[]
           created_at: string
           updated_at: string
         }
@@ -313,6 +314,7 @@ export interface Database {
           name: string
           days?: number
           is_template?: boolean
+          purchased_ingredient_ids?: string[]
           created_at?: string
           updated_at?: string
         }
@@ -322,6 +324,7 @@ export interface Database {
           name?: string
           days?: number
           is_template?: boolean
+          purchased_ingredient_ids?: string[]
           created_at?: string
           updated_at?: string
         }
