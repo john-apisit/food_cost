@@ -80,6 +80,24 @@
           <router-link to="/packaging" class="underline">ไปเพิ่มที่หน้าบรรจุภัณฑ์</router-link>
         </p>
 
+        <section class="space-y-3">
+          <div>
+            <h2 class="font-semibold">เตรียมของก่อนเปิดร้าน</h2>
+            <p class="text-xs text-gray-400 mt-0.5">ขั้นตอนที่ต้องทำก่อนเริ่มขาย เช่น รวนหมู หุงข้าว — ใส่ได้กี่ข้อก็ได้</p>
+          </div>
+          <div v-for="(step, index) in prepSteps" :key="step.id" class="flex gap-2">
+            <input
+              v-model="step.text"
+              class="input-field flex-1 min-w-0"
+              :placeholder="prepStepPlaceholder(index)"
+            />
+            <button type="button" class="text-red-600 text-sm shrink-0" @click="removePrepStep(index)">ลบ</button>
+          </div>
+          <button type="button" class="text-primary-600 text-sm font-medium" @click="addPrepStep">
+            + เพิ่มขั้นตอน
+          </button>
+        </section>
+
         <section class="space-y-4">
           <div class="flex flex-col sm:flex-row sm:items-baseline sm:justify-between gap-1">
             <h2 class="font-semibold">วัตถุดิบในสูตร</h2>
@@ -313,6 +331,26 @@ const ingredientLinesByCategory = ref(emptyGroupedLines())
 const packagingLines = ref<RecipeLineDraft[]>([])
 const addons = ref<Array<{ addonMenuItemId: string; quantity: number }>>([])
 
+type PrepStepDraft = { id: number; text: string }
+let prepStepSeq = 0
+const emptyPrepStep = (): PrepStepDraft => ({ id: ++prepStepSeq, text: '' })
+const prepSteps = ref<PrepStepDraft[]>([emptyPrepStep()])
+const PREP_STEP_EXAMPLES = ['รวนหมู', 'หุงข้าว', 'หั่นผัก']
+
+const prepStepPlaceholder = (index: number) => PREP_STEP_EXAMPLES[index] || 'เช่น เตรียมน้ำจิ้ม'
+
+const addPrepStep = () => {
+  prepSteps.value.push(emptyPrepStep())
+}
+
+const removePrepStep = (index: number) => {
+  prepSteps.value.splice(index, 1)
+  if (!prepSteps.value.length) prepSteps.value = [emptyPrepStep()]
+}
+
+const cleanedPrepSteps = () =>
+  prepSteps.value.map((step) => step.text.trim()).filter(Boolean)
+
 const foodIngredients = computed(() => ingredients.value.filter((i) => i.type === 'ingredient'))
 const allIngredientLines = computed(() =>
   INGREDIENT_CATEGORIES.flatMap((cat) => ingredientLinesByCategory.value[cat]),
@@ -403,6 +441,7 @@ const save = async () => {
       imageUrl: form.imageUrl.trim() || undefined,
       status: form.status,
       statusNote: form.statusNote.trim() || undefined,
+      prepSteps: cleanedPrepSteps(),
       recipeLines: [...allIngredientLines.value, ...packagingLines.value].filter(
         (l) => l.ingredientId && l.quantityPerUnit > 0,
       ),
@@ -444,6 +483,9 @@ onMounted(async () => {
     form.imageUrl = menu.imageUrl || ''
     form.status = menu.status
     form.statusNote = menu.statusNote || ''
+    prepSteps.value = menu.prepSteps?.length
+      ? menu.prepSteps.map((text) => ({ id: ++prepStepSeq, text }))
+      : [emptyPrepStep()]
     const grouped = emptyGroupedLines()
     for (const line of menu.recipeLines || []) {
       if (line.ingredient?.type === 'packaging') continue

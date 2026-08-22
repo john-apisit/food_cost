@@ -128,6 +128,7 @@ export interface MenuItem {
   imageUrl?: string
   status: MenuStatus
   statusNote?: string
+  prepSteps?: string[]
   isActive: boolean
   createdAt: string
   updatedAt: string
@@ -256,6 +257,7 @@ export interface MenuFormPayload {
   imageUrl?: string
   status: MenuStatus
   statusNote?: string
+  prepSteps?: string[]
   recipeLines: Array<{ ingredientId: string; quantityPerUnit: number }>
   addons?: Array<{ addonMenuItemId: string; quantity: number }>
 }

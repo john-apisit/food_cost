@@ -23,6 +23,11 @@ function optStr(value: unknown): string | undefined {
   return value == null || value === '' ? undefined : String(value)
 }
 
+function strList(value: unknown): string[] {
+  if (!Array.isArray(value)) return []
+  return value.map((item) => String(item).trim()).filter(Boolean)
+}
+
 function optTime(value: unknown): string | undefined {
   if (value == null || value === '') return undefined
   const match = String(value).match(/^(\d{1,2}:\d{2})/)
@@ -119,6 +124,7 @@ export function mapMenuItem(row: Record<string, unknown>, nested = true): MenuIt
     imageUrl: optStr(row.image_url),
     status: isMenuStatus(row.status) ? row.status : 'ready_to_sell',
     statusNote: optStr(row.status_note),
+    prepSteps: strList(row.prep_steps),
     isActive: Boolean(row.is_active),
     createdAt: String(row.created_at),
     updatedAt: String(row.updated_at),

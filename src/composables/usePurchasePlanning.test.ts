@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   UNSPECIFIED_SUPPLIER,
   groupPurchaseItemsBySupplier,
+  uniquePrepSteps,
   usePurchasePlanning,
 } from '@/composables/usePurchasePlanning'
 import type { Ingredient, MenuItem, PurchaseItem } from '@/types/models'
@@ -156,5 +157,35 @@ describe('purchase planning', () => {
     )
 
     expect(items.find((i) => i.ingredient.id === 'p4')?.totalQuantity).toBe(20)
+  })
+
+  it('lists unique prep steps from selected menus', () => {
+    const kraPao: MenuItem = {
+      ...friedRice,
+      id: 'm2',
+      name: 'กะเพราหมู',
+      prepSteps: ['รวนหมู', 'หุงข้าว', 'ต้มน้ำ', '  '],
+    }
+    const friedRiceWithPrep: MenuItem = {
+      ...friedRice,
+      prepSteps: ['หุงข้าว', 'รวนหมู'],
+    }
+    const skipped: MenuItem = {
+      ...friedRice,
+      id: 'm3',
+      name: 'ไข่เจียว',
+      prepSteps: ['ตีไข่'],
+    }
+
+    const steps = uniquePrepSteps([
+      { menuItem: kraPao },
+      { menuItem: friedRiceWithPrep },
+    ])
+
+    expect(steps.map((s) => s.step)).toEqual(['ต้มน้ำ', 'รวนหมู', 'หุงข้าว'])
+    expect(steps[0].fromMenus).toEqual(['กะเพราหมู'])
+    expect(steps[1].fromMenus).toEqual(['กะเพราหมู', 'ข้าวผัดหมู'])
+    expect(steps[2].fromMenus).toEqual(['กะเพราหมู', 'ข้าวผัดหมู'])
+    expect(uniquePrepSteps([{ menuItem: skipped }]).map((s) => s.step)).toEqual(['ตีไข่'])
   })
 })

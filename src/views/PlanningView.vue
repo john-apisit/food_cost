@@ -68,6 +68,24 @@
         </div>
       </div>
 
+      <div v-if="prepSteps.length" class="card p-6 space-y-3">
+        <div>
+          <h2 class="text-lg font-semibold">เตรียมของก่อนเปิดร้าน</h2>
+          <p class="text-sm text-gray-500 mt-1">ขั้นตอนจากเมนูในแผนนี้ รายการที่ซ้ำกันจะแสดงแค่ครั้งเดียว</p>
+        </div>
+        <ol class="space-y-2">
+          <li v-for="(item, index) in prepSteps" :key="item.step" class="flex items-start gap-3">
+            <span class="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary-50 text-xs font-medium text-primary-700">
+              {{ index + 1 }}
+            </span>
+            <div class="min-w-0 pt-0.5">
+              <p class="font-medium text-gray-900">{{ item.step }}</p>
+              <p class="text-xs text-gray-500">{{ item.fromMenus.join(', ') }}</p>
+            </div>
+          </li>
+        </ol>
+      </div>
+
       <div v-if="purchaseItems.length" class="space-y-4">
         <div class="flex flex-col sm:flex-row sm:justify-between sm:items-end gap-3">
           <div>
@@ -180,7 +198,7 @@ import { X } from 'lucide-vue-next'
 import MainLayout from '@/layouts/MainLayout.vue'
 import { useMenu } from '@/composables/useMenu'
 import { useIngredients } from '@/composables/useIngredients'
-import { groupPurchaseItemsBySupplier, UNSPECIFIED_SUPPLIER, usePurchasePlanning } from '@/composables/usePurchasePlanning'
+import { groupPurchaseItemsBySupplier, uniquePrepSteps, UNSPECIFIED_SUPPLIER, usePurchasePlanning } from '@/composables/usePurchasePlanning'
 import { usePurchasePlans } from '@/composables/usePurchasePlans'
 import { useToast } from '@/composables/useToast'
 import { exportPurchaseListToCsv, exportPurchaseListToPdf } from '@/utils/export'
@@ -216,10 +234,12 @@ const packagingCount = computed(
 const selectedLines = () =>
   menuSelections.value
     .filter((s) => s.menuItemId && s.quantity > 0)
-    .map((s) => ({
-      menuItem: menuItems.value.find((m) => m.id === s.menuItemId)!,
-      quantity: s.quantity,
-    }))
+    .flatMap((s) => {
+      const menuItem = menuItems.value.find((m) => m.id === s.menuItemId)
+      return menuItem ? [{ menuItem, quantity: s.quantity }] : []
+    })
+
+const prepSteps = computed(() => uniquePrepSteps(selectedLines()))
 
 const calculate = () => {
   purchaseItems.value = calculatePurchaseList(selectedLines(), days.value, ingredients.value, menuItems.value)

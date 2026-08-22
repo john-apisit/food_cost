@@ -159,6 +159,7 @@ export interface Database {
           image_url: string | null
           status: 'ready_to_sell' | 'testing_recipe' | 'not_ready' | 'discontinued'
           status_note: string | null
+          prep_steps: string[]
           is_active: boolean
           created_at: string
           updated_at: string
@@ -174,6 +175,7 @@ export interface Database {
           image_url?: string | null
           status?: 'ready_to_sell' | 'testing_recipe' | 'not_ready' | 'discontinued'
           status_note?: string | null
+          prep_steps?: string[]
           is_active?: boolean
           created_at?: string
           updated_at?: string
@@ -189,6 +191,7 @@ export interface Database {
           image_url?: string | null
           status?: 'ready_to_sell' | 'testing_recipe' | 'not_ready' | 'discontinued'
           status_note?: string | null
+          prep_steps?: string[]
           is_active?: boolean
           created_at?: string
           updated_at?: string

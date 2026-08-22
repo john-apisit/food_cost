@@ -3,6 +3,33 @@ import { getPackagingPresetLines } from '@/utils/packagingPresets'
 
 export const UNSPECIFIED_SUPPLIER = 'ไม่ระบุซัพพลายเออร์'
 
+export interface PrepStepItem {
+  step: string
+  fromMenus: string[]
+}
+
+export function uniquePrepSteps(
+  menuSelections: Array<{ menuItem: MenuItem }>,
+): PrepStepItem[] {
+  const map = new Map<string, PrepStepItem>()
+
+  for (const { menuItem } of menuSelections) {
+    for (const raw of menuItem.prepSteps || []) {
+      const step = raw.trim()
+      if (!step) continue
+      const key = step.toLocaleLowerCase('th')
+      const existing = map.get(key)
+      if (existing) {
+        if (!existing.fromMenus.includes(menuItem.name)) existing.fromMenus.push(menuItem.name)
+      } else {
+        map.set(key, { step, fromMenus: [menuItem.name] })
+      }
+    }
+  }
+
+  return Array.from(map.values()).sort((a, b) => a.step.localeCompare(b.step, 'th'))
+}
+
 export function supplierLabel(supplier?: string | null): string {
   const trimmed = supplier?.trim()
   return trimmed || UNSPECIFIED_SUPPLIER
