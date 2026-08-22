@@ -240,6 +240,7 @@ export interface SalesRecord {
   menuItemId: string
   targetQty?: number
   actualQty: number
+  saleDate: string
   recordedAt: string
   menuItem?: MenuItem
 }

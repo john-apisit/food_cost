@@ -15,10 +15,20 @@ export function formatNumber(amount: number, digits = 2): string {
 }
 
 export function parseLocalDate(value: string): Date | null {
-  const match = String(value).trim().match(/^(\d{4})-(\d{2})-(\d{2})/)
+  const match = String(value).trim().match(/^(\d{4})-(\d{2})-(\d{2})$/)
   if (!match) return null
   const date = new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]))
   return Number.isNaN(date.getTime()) ? null : date
+}
+
+export function toDateInputValue(value: Date | string = new Date()): string {
+  const date =
+    typeof value === 'string' ? (parseLocalDate(value) ?? new Date(value)) : value
+  if (Number.isNaN(date.getTime())) return toDateInputValue()
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
 }
 
 export function formatDate(value: string): string {
@@ -31,7 +41,31 @@ export function formatDate(value: string): string {
 export function formatDateOnly(value: string): string {
   const date = parseLocalDate(value)
   if (!date) return value
-  return new Intl.DateTimeFormat('th-TH', { dateStyle: 'medium' }).format(date)
+  return new Intl.DateTimeFormat('th-TH-u-ca-gregory', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+  }).format(date)
+}
+
+const THAI_WEEKDAY_ABBR = ['อา.', 'จ.', 'อ.', 'พ.', 'พฤ.', 'ศ.', 'ส.'] as const
+
+export function formatWeekdayDate(value: string): string {
+  const date = parseLocalDate(value)
+  if (!date) return value
+  const weekday = THAI_WEEKDAY_ABBR[date.getDay()]
+  return `${weekday} ${formatDateOnly(value)}`
+}
+
+export function formatSaleDateRange(start?: string, end?: string): string {
+  if (start && end) {
+    return start === end
+      ? formatWeekdayDate(start)
+      : `${formatWeekdayDate(start)}–${formatWeekdayDate(end)}`
+  }
+  if (start) return formatWeekdayDate(start)
+  if (end) return formatWeekdayDate(end)
+  return ''
 }
 
 export function inclusiveDayCount(start: string, end: string): number {

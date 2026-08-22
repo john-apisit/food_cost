@@ -374,6 +374,7 @@ export interface Database {
           menu_item_id: string
           target_qty: number | null
           actual_qty: number
+          sale_date: string
           recorded_at: string
         }
         Insert: {
@@ -383,6 +384,7 @@ export interface Database {
           menu_item_id: string
           target_qty?: number | null
           actual_qty: number
+          sale_date?: string
           recorded_at?: string
         }
         Update: {
@@ -392,6 +394,7 @@ export interface Database {
           menu_item_id?: string
           target_qty?: number | null
           actual_qty?: number
+          sale_date?: string
           recorded_at?: string
         }
         Relationships: []

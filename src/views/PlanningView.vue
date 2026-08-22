@@ -238,6 +238,7 @@ import {
   formatCurrency,
   formatDateOnly,
   formatNumber,
+  formatSaleDateRange,
   inclusiveDayCount,
   ingredientTypeLabel,
   saleUnitLabel,
@@ -277,17 +278,8 @@ watch([saleStartDate, saleEndDate], ([start, end]) => {
 const planDatesLabel = (plan: PurchasePlan) => {
   const parts: string[] = []
   if (plan.purchaseDate) parts.push(`ซื้อ ${formatDateOnly(plan.purchaseDate)}`)
-  if (plan.saleStartDate && plan.saleEndDate) {
-    parts.push(
-      plan.saleStartDate === plan.saleEndDate
-        ? `ขาย ${formatDateOnly(plan.saleStartDate)}`
-        : `ขาย ${formatDateOnly(plan.saleStartDate)}–${formatDateOnly(plan.saleEndDate)}`,
-    )
-  } else if (plan.saleStartDate) {
-    parts.push(`ขายตั้งแต่ ${formatDateOnly(plan.saleStartDate)}`)
-  } else if (plan.saleEndDate) {
-    parts.push(`ขายถึง ${formatDateOnly(plan.saleEndDate)}`)
-  }
+  const saleRange = formatSaleDateRange(plan.saleStartDate, plan.saleEndDate)
+  if (saleRange) parts.push(`ขาย ${saleRange}`)
   return parts.join(' · ')
 }
 const totalCost = computed(() => purchaseItems.value.reduce((sum, item) => sum + item.totalCost, 0))
@@ -384,13 +376,8 @@ const loadPlan = (plan: PurchasePlan) => {
 const periodNote = computed(() => {
   const parts: string[] = []
   if (purchaseDate.value) parts.push(`ซื้อ ${formatDateOnly(purchaseDate.value)}`)
-  if (saleStartDate.value && saleEndDate.value) {
-    parts.push(
-      saleStartDate.value === saleEndDate.value
-        ? `ขาย ${formatDateOnly(saleStartDate.value)}`
-        : `ขาย ${formatDateOnly(saleStartDate.value)}–${formatDateOnly(saleEndDate.value)}`,
-    )
-  }
+  const saleRange = formatSaleDateRange(saleStartDate.value, saleEndDate.value)
+  if (saleRange) parts.push(`ขาย ${saleRange}`)
   return parts.join(' · ')
 })
 

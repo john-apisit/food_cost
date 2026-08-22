@@ -228,6 +228,7 @@ export function mapSalesRecord(row: Record<string, unknown>): SalesRecord {
     menuItemId: String(row.menu_item_id),
     targetQty: row.target_qty == null ? undefined : num(row.target_qty),
     actualQty: num(row.actual_qty),
+    saleDate: optDate(row.sale_date) ?? String(row.recorded_at).slice(0, 10),
     recordedAt: String(row.recorded_at),
     menuItem: menuRaw ? mapMenuItem(menuRaw, false) : undefined,
   }
