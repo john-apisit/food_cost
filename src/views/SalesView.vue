@@ -16,7 +16,11 @@
           </div>
           <div>
             <label class="block text-sm font-medium mb-1">วันที่ *</label>
-            <input v-model="saleDate" type="date" required class="input-field w-full" />
+            <DatePicker
+              v-model="saleDate"
+              :min="selectedPlan?.saleStartDate"
+              :max="selectedPlan?.saleEndDate"
+            />
           </div>
         </div>
 
@@ -79,8 +83,32 @@
         </button>
       </form>
 
-      <div class="card overflow-hidden">
-        <div class="overflow-x-auto">
+      <div class="card">
+        <div class="flex flex-col gap-3 px-4 py-3 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <p class="text-sm font-medium text-gray-900">ยอดขายที่บันทึก</p>
+            <p class="text-xs text-gray-500">{{ recordsRangeLabel }}</p>
+          </div>
+          <div class="flex flex-col gap-2 sm:flex-row sm:items-end">
+            <div class="sm:w-52">
+              <label class="mb-1 block text-xs font-medium text-gray-500">จากวันที่</label>
+              <DatePicker v-model="filterFrom" placeholder="จากวันที่" />
+            </div>
+            <div class="sm:w-52">
+              <label class="mb-1 block text-xs font-medium text-gray-500">ถึงวันที่</label>
+              <DatePicker v-model="filterTo" align="right" placeholder="ถึงวันที่" />
+            </div>
+            <button
+              type="button"
+              class="text-sm font-medium text-primary-600 hover:text-primary-700 disabled:cursor-not-allowed disabled:text-gray-400 sm:mb-2 sm:ml-1"
+              :disabled="!latestSaleDate || showingLatestDay"
+              @click="showLatestDay"
+            >
+              วันที่ล่าสุด
+            </button>
+          </div>
+        </div>
+        <div class="overflow-x-auto border-t">
           <table class="min-w-full divide-y text-sm">
             <thead class="bg-gray-50">
               <tr>
@@ -110,7 +138,11 @@
             </tbody>
           </table>
         </div>
-        <EmptyState v-if="!records.length" title="ยังไม่มีบันทึกยอดขาย" />
+        <EmptyState
+          v-if="!records.length"
+          :title="emptyTitle"
+          :description="emptyDescription"
+        />
       </div>
     </div>
   </MainLayout>
@@ -119,11 +151,18 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
 import MainLayout from '@/layouts/MainLayout.vue'
+import DatePicker from '@/components/common/DatePicker.vue'
 import EmptyState from '@/components/common/EmptyState.vue'
 import { usePurchasePlans } from '@/composables/usePurchasePlans'
 import { useSalesRecords } from '@/composables/useSalesRecords'
 import { useToast } from '@/composables/useToast'
-import { formatDateOnly, formatSaleDateRange, saleUnitLabel, toDateInputValue } from '@/utils/format'
+import {
+  formatDateOnly,
+  formatSaleDateRange,
+  normalizeDateRange,
+  saleUnitLabel,
+  toDateInputValue,
+} from '@/utils/format'
 import type { PurchasePlan, SalesRecord } from '@/types/models'
 
 type SaleEntry = {
@@ -136,14 +175,42 @@ type SaleEntry = {
 }
 
 const { plans, fetchPlans } = usePurchasePlans()
-const { records, loading, fetchRecords, createRecords, deleteRecord } = useSalesRecords()
+const { records, loading, fetchLatestSaleDate, fetchRecords, createRecords, deleteRecord } =
+  useSalesRecords()
 const { success, error } = useToast()
 
 const selectedPlanId = ref('')
 const saleDate = ref(toDateInputValue())
 const entries = ref<SaleEntry[]>([])
+const filterFrom = ref(toDateInputValue())
+const filterTo = ref(toDateInputValue())
+const latestSaleDate = ref('')
+const applyingPreset = ref(false)
+const hasCustomRange = ref(false)
 
 const selectedPlan = computed(() => plans.value.find((plan) => plan.id === selectedPlanId.value))
+
+const showingLatestDay = computed(
+  () =>
+    Boolean(latestSaleDate.value) &&
+    filterFrom.value === latestSaleDate.value &&
+    filterTo.value === latestSaleDate.value,
+)
+
+const recordsRangeLabel = computed(() => {
+  const range = normalizeDateRange(filterFrom.value, filterTo.value)
+  if (!range) return 'เลือกช่วงวันที่เพื่อดูยอดขายย้อนหลัง'
+  if (showingLatestDay.value) return `แสดงวันที่ล่าสุด · ${formatSaleDateRange(range.from, range.to)}`
+  return `แสดง ${formatSaleDateRange(range.from, range.to)}`
+})
+
+const emptyTitle = computed(() =>
+  latestSaleDate.value ? 'ไม่มียอดขายในช่วงวันที่เลือก' : 'ยังไม่มีบันทึกยอดขาย',
+)
+
+const emptyDescription = computed(() =>
+  latestSaleDate.value ? 'ลองเปลี่ยนช่วงวันที่เพื่อดูย้อนหลัง' : undefined,
+)
 
 const canSave = computed(
   () =>
@@ -217,8 +284,15 @@ const varianceClass = (row: SalesRecord) => {
   return row.actualQty < row.targetQty ? 'text-red-600' : 'text-green-600'
 }
 
+const resetForm = () => {
+  selectedPlanId.value = ''
+  saleDate.value = toDateInputValue()
+  entries.value = []
+}
+
 const save = async () => {
   if (!canSave.value || !selectedPlanId.value) return
+  const savedSaleDate = saleDate.value
   try {
     await createRecords(
       entries.value.map((entry) => ({
@@ -230,7 +304,17 @@ const save = async () => {
       })),
     )
     success('บันทึกยอดขายแล้ว')
-    entries.value = entries.value.map((entry) => ({ ...entry, actualQty: null }))
+    resetForm()
+    await refreshLatestSaleDate()
+    applyingPreset.value = true
+    try {
+      hasCustomRange.value = savedSaleDate !== latestSaleDate.value
+      filterFrom.value = savedSaleDate
+      filterTo.value = savedSaleDate
+      await fetchRecords({ from: savedSaleDate, to: savedSaleDate })
+    } finally {
+      applyingPreset.value = false
+    }
   } catch (e: unknown) {
     error(e instanceof Error ? e.message : 'บันทึกไม่สำเร็จ')
   }
@@ -239,9 +323,62 @@ const save = async () => {
 const remove = async (id: string) => {
   if (!confirm('ลบรายการนี้?')) return
   await deleteRecord(id)
+  if (!records.value.length) {
+    await refreshLatestSaleDate()
+    if (!hasCustomRange.value) await showLatestDay()
+  }
 }
 
+const refreshLatestSaleDate = async () => {
+  latestSaleDate.value = (await fetchLatestSaleDate()) ?? ''
+}
+
+const applyDateRange = async (from: string, to: string, custom: boolean) => {
+  applyingPreset.value = true
+  hasCustomRange.value = custom
+  try {
+    filterFrom.value = from
+    filterTo.value = to
+    await fetchRecords({ from, to })
+  } finally {
+    applyingPreset.value = false
+  }
+}
+
+const showToday = async () => {
+  const today = toDateInputValue()
+  await refreshLatestSaleDate()
+  await applyDateRange(today, today, today !== latestSaleDate.value)
+}
+
+const showLatestDay = async () => {
+  await refreshLatestSaleDate()
+  if (!latestSaleDate.value) {
+    await applyDateRange(toDateInputValue(), toDateInputValue(), true)
+    return
+  }
+  await applyDateRange(latestSaleDate.value, latestSaleDate.value, false)
+}
+
+watch([filterFrom, filterTo], async ([from, to]) => {
+  if (applyingPreset.value) return
+  const range = normalizeDateRange(from, to)
+  if (!range) return
+  if (from !== range.from || to !== range.to) {
+    filterFrom.value = range.from
+    filterTo.value = range.to
+    return
+  }
+  hasCustomRange.value = !(
+    latestSaleDate.value &&
+    range.from === latestSaleDate.value &&
+    range.to === latestSaleDate.value
+  )
+  await fetchRecords(range)
+})
+
 onMounted(async () => {
-  await Promise.all([fetchPlans(), fetchRecords()])
+  await fetchPlans()
+  await showToday()
 })
 </script>

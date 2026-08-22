@@ -8,25 +8,52 @@ const records = ref<SalesRecord[]>([])
 const loading = ref(false)
 const error = ref<string | null>(null)
 
+type SalesRecordRange = {
+  from?: string
+  to?: string
+}
+
 export function useSalesRecords() {
   const { user } = useAuth()
+  let lastRange: SalesRecordRange = {}
 
-  const fetchRecords = async () => {
+  const fetchLatestSaleDate = async (): Promise<string | null> => {
+    if (!user.value) return null
+
+    const { data, error: fetchError } = await supabase
+      .from('sales_records')
+      .select('sale_date')
+      .eq('user_id', user.value.id)
+      .order('sale_date', { ascending: false })
+      .limit(1)
+      .maybeSingle()
+
+    if (fetchError) throw fetchError
+    return data?.sale_date ?? null
+  }
+
+  const fetchRecords = async (range: SalesRecordRange = lastRange) => {
     if (!user.value) return
+    lastRange = range
     loading.value = true
     error.value = null
 
     try {
-      const { data, error: fetchError } = await supabase
+      let query = supabase
         .from('sales_records')
         .select(`
           *,
           menu_item:menu_items (*)
         `)
         .eq('user_id', user.value.id)
-        .order('sale_date', { ascending: false })
-        .order('recorded_at', { ascending: false })
-        .limit(200)
+
+      if (range.from) query = query.gte('sale_date', range.from)
+      if (range.to) query = query.lte('sale_date', range.to)
+
+      query = query.order('sale_date', { ascending: false }).order('recorded_at', { ascending: false })
+      if (!range.from && !range.to) query = query.limit(200)
+
+      const { data, error: fetchError } = await query
 
       if (fetchError) throw fetchError
       records.value = (data || []).map((row) => mapSalesRecord(row as Record<string, unknown>))
@@ -61,7 +88,6 @@ export function useSalesRecords() {
         })),
       )
       if (insertError) throw insertError
-      await fetchRecords()
     } catch (e: unknown) {
       error.value = e instanceof Error ? e.message : 'บันทึกยอดขายไม่สำเร็จ'
       throw e
@@ -76,5 +102,5 @@ export function useSalesRecords() {
     records.value = records.value.filter((r) => r.id !== id)
   }
 
-  return { records, loading, error, fetchRecords, createRecords, deleteRecord }
+  return { records, loading, error, fetchLatestSaleDate, fetchRecords, createRecords, deleteRecord }
 }

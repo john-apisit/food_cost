@@ -1,9 +1,14 @@
 import { describe, expect, it } from 'vitest'
 import {
   formatDateOnly,
+  formatMonthYear,
   formatSaleDateRange,
   formatWeekdayDate,
   inclusiveDayCount,
+  isDateInInclusiveRange,
+  latestDateValue,
+  monthCalendarDays,
+  normalizeDateRange,
   parseLocalDate,
   toDateInputValue,
 } from './format'
@@ -72,5 +77,56 @@ describe('formatSaleDateRange', () => {
 
   it('formats an inclusive range', () => {
     expect(formatSaleDateRange('2026-08-24', '2026-08-26')).toBe('จ. 24 ส.ค. 2026–พ. 26 ส.ค. 2026')
+  })
+})
+
+describe('formatMonthYear', () => {
+  it('formats a Gregorian month and year in Thai', () => {
+    expect(formatMonthYear(new Date(2026, 7, 1))).toBe('สิงหาคม 2026')
+  })
+})
+
+describe('latestDateValue', () => {
+  it('returns the latest valid YYYY-MM-DD', () => {
+    expect(latestDateValue(['2026-08-20', '2026-08-23', '2026-08-21'])).toBe('2026-08-23')
+  })
+
+  it('ignores invalid values', () => {
+    expect(latestDateValue([undefined, '', '2026-08-10'])).toBe('2026-08-10')
+    expect(latestDateValue([])).toBeNull()
+  })
+})
+
+describe('isDateInInclusiveRange', () => {
+  it('includes both ends of the range', () => {
+    expect(isDateInInclusiveRange('2026-08-20', '2026-08-20', '2026-08-22')).toBe(true)
+    expect(isDateInInclusiveRange('2026-08-22', '2026-08-20', '2026-08-22')).toBe(true)
+    expect(isDateInInclusiveRange('2026-08-19', '2026-08-20', '2026-08-22')).toBe(false)
+  })
+})
+
+describe('normalizeDateRange', () => {
+  it('swaps inverted ranges', () => {
+    expect(normalizeDateRange('2026-08-26', '2026-08-24')).toEqual({
+      from: '2026-08-24',
+      to: '2026-08-26',
+    })
+  })
+
+  it('treats a single bound as a one-day range', () => {
+    expect(normalizeDateRange('2026-08-24', '')).toEqual({
+      from: '2026-08-24',
+      to: '2026-08-24',
+    })
+  })
+})
+
+describe('monthCalendarDays', () => {
+  it('pads August 2026 from Saturday through the following week', () => {
+    const days = monthCalendarDays(new Date(2026, 7, 1))
+    expect(days[0]).toEqual({ iso: '2026-07-26', inMonth: false })
+    expect(days[6]).toEqual({ iso: '2026-08-01', inMonth: true })
+    expect(days.at(-1)).toEqual({ iso: '2026-09-05', inMonth: false })
+    expect(days).toHaveLength(42)
   })
 })

@@ -76,6 +76,77 @@ export function inclusiveDayCount(start: string, end: string): number {
   return Math.max(1, diff)
 }
 
+export function formatMonthYear(value: Date | string): string {
+  const date = typeof value === 'string' ? parseLocalDate(value) : value
+  if (!date || Number.isNaN(date.getTime())) return ''
+  return new Intl.DateTimeFormat('th-TH-u-ca-gregory', {
+    month: 'long',
+    year: 'numeric',
+  }).format(date)
+}
+
+export function addMonthsToDate(value: Date, amount: number): Date {
+  return new Date(value.getFullYear(), value.getMonth() + amount, 1)
+}
+
+export function latestDateValue(dates: Array<string | undefined>): string | null {
+  const valid = dates.filter((value): value is string => Boolean(parseLocalDate(value ?? '')))
+  if (!valid.length) return null
+  return valid.reduce((latest, value) => (value > latest ? value : latest))
+}
+
+export function isDateInInclusiveRange(value: string, from?: string, to?: string): boolean {
+  if (!parseLocalDate(value)) return false
+  if (from && value < from) return false
+  if (to && value > to) return false
+  return true
+}
+
+export function normalizeDateRange(from?: string, to?: string): { from: string; to: string } | null {
+  const start = from && parseLocalDate(from) ? from : null
+  const end = to && parseLocalDate(to) ? to : null
+  if (!start && !end) return null
+  if (start && end) return start <= end ? { from: start, to: end } : { from: end, to: start }
+  const only = start ?? end
+  return only ? { from: only, to: only } : null
+}
+
+export type CalendarDay = {
+  iso: string
+  inMonth: boolean
+}
+
+export function monthCalendarDays(month: Date): CalendarDay[] {
+  const first = new Date(month.getFullYear(), month.getMonth(), 1)
+  const daysInMonth = new Date(month.getFullYear(), month.getMonth() + 1, 0).getDate()
+  const cells: CalendarDay[] = []
+
+  for (let offset = first.getDay(); offset > 0; offset--) {
+    const date = new Date(month.getFullYear(), month.getMonth(), 1 - offset)
+    cells.push({ iso: toDateInputValue(date), inMonth: false })
+  }
+
+  for (let day = 1; day <= daysInMonth; day++) {
+    cells.push({
+      iso: toDateInputValue(new Date(month.getFullYear(), month.getMonth(), day)),
+      inMonth: true,
+    })
+  }
+
+  while (cells.length % 7 !== 0) {
+    const last = parseLocalDate(cells[cells.length - 1].iso)
+    if (!last) break
+    cells.push({
+      iso: toDateInputValue(new Date(last.getFullYear(), last.getMonth(), last.getDate() + 1)),
+      inMonth: false,
+    })
+  }
+
+  return cells
+}
+
+export const CALENDAR_WEEKDAY_LABELS = ['อา', 'จ', 'อ', 'พ', 'พฤ', 'ศ', 'ส'] as const
+
 export function saleUnitLabel(type: 'box' | 'bag'): string {
   return type === 'box' ? 'กล่อง' : 'มัดถุง'
 }
