@@ -89,6 +89,15 @@ export function addMonthsToDate(value: Date, amount: number): Date {
   return new Date(value.getFullYear(), value.getMonth() + amount, 1)
 }
 
+export function monthDateRange(value: Date | string = new Date()): { from: string; to: string } {
+  const date = typeof value === 'string' ? parseLocalDate(value) : value
+  const safe = date && !Number.isNaN(date.getTime()) ? date : new Date()
+  return {
+    from: toDateInputValue(new Date(safe.getFullYear(), safe.getMonth(), 1)),
+    to: toDateInputValue(new Date(safe.getFullYear(), safe.getMonth() + 1, 0)),
+  }
+}
+
 export function latestDateValue(dates: Array<string | undefined>): string | null {
   const valid = dates.filter((value): value is string => Boolean(parseLocalDate(value ?? '')))
   if (!valid.length) return null

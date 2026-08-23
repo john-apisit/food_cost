@@ -1,6 +1,10 @@
 import {
+  isCashCategory,
+  isCashEntryType,
+  isCashPaymentMethod,
   isMenuStatus,
   WEEKDAYS,
+  type CashEntry,
   type Combo,
   type ComboItem,
   type Ingredient,
@@ -235,5 +239,44 @@ export function mapSalesRecord(row: Record<string, unknown>): SalesRecord {
     saleDate: optDate(row.sale_date) ?? String(row.recorded_at).slice(0, 10),
     recordedAt: String(row.recorded_at),
     menuItem: menuRaw ? mapMenuItem(menuRaw, false) : undefined,
+  }
+}
+
+export function mapCashEntry(row: Record<string, unknown>): CashEntry {
+  const ingredientRaw = (row.ingredient ?? row.ingredients) as
+    | Record<string, unknown>
+    | Record<string, unknown>[]
+    | undefined
+  const ingredientRow = Array.isArray(ingredientRaw) ? ingredientRaw[0] : ingredientRaw
+  const planRaw = (row.plan ?? row.purchase_plans) as
+    | Record<string, unknown>
+    | Record<string, unknown>[]
+    | undefined
+  const planRow = Array.isArray(planRaw) ? planRaw[0] : planRaw
+
+  return {
+    id: String(row.id),
+    userId: String(row.user_id),
+    type: isCashEntryType(row.type) ? row.type : 'expense',
+    category: isCashCategory(row.category) ? row.category : 'other',
+    amount: num(row.amount),
+    occurredAt: optDate(row.occurred_at) ?? String(row.created_at).slice(0, 10),
+    paymentMethod: isCashPaymentMethod(row.payment_method) ? row.payment_method : 'bank_transfer',
+    counterparty: optStr(row.counterparty),
+    note: optStr(row.note),
+    periodFrom: optDate(row.period_from),
+    periodTo: optDate(row.period_to),
+    grossAmount: row.gross_amount == null ? undefined : num(row.gross_amount),
+    feeAmount: row.fee_amount == null ? undefined : num(row.fee_amount),
+    adjustmentAmount: row.adjustment_amount == null ? undefined : num(row.adjustment_amount),
+    ingredientId: optStr(row.ingredient_id),
+    quantity: row.quantity == null ? undefined : num(row.quantity),
+    unit: optStr(row.unit),
+    isAsset: Boolean(row.is_asset),
+    planId: optStr(row.plan_id),
+    createdAt: String(row.created_at),
+    updatedAt: String(row.updated_at),
+    ingredient: ingredientRow ? mapIngredient(ingredientRow) : undefined,
+    planName: optStr(planRow?.name),
   }
 }

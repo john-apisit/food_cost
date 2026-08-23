@@ -285,3 +285,118 @@ export interface ComboFormPayload {
   sellingPrice: number
   items: Array<{ menuItemId: string; quantity: number }>
 }
+
+export const CASH_ENTRY_TYPES = ['income', 'expense', 'transfer'] as const
+export type CashEntryType = (typeof CASH_ENTRY_TYPES)[number]
+
+export const CASH_CATEGORIES = [
+  'platform_payout',
+  'other_income',
+  'ingredient',
+  'packaging',
+  'equipment',
+  'utility',
+  'labor',
+  'other',
+  'owner_draw',
+] as const
+export type CashCategory = (typeof CASH_CATEGORIES)[number]
+
+export const CASH_PAYMENT_METHODS = ['cash', 'bank_transfer'] as const
+export type CashPaymentMethod = (typeof CASH_PAYMENT_METHODS)[number]
+
+export const CASH_ENTRY_TYPE_LABELS: Record<CashEntryType, string> = {
+  income: 'รายรับ',
+  expense: 'รายจ่าย',
+  transfer: 'ไม่นับกำไร',
+}
+
+export const CASH_CATEGORY_LABELS: Record<CashCategory, string> = {
+  platform_payout: 'รับโอนแพลตฟอร์ม',
+  other_income: 'รายได้อื่น',
+  ingredient: 'วัตถุดิบ',
+  packaging: 'บรรจุภัณฑ์',
+  equipment: 'อุปกรณ์ครัว',
+  utility: 'สาธารณูปโภค',
+  labor: 'แรงงาน',
+  other: 'อื่นๆ',
+  owner_draw: 'ถอนส่วนตัว',
+}
+
+export const CASH_PAYMENT_METHOD_LABELS: Record<CashPaymentMethod, string> = {
+  cash: 'เงินสด',
+  bank_transfer: 'โอนบัญชี',
+}
+
+export const CASH_CATEGORIES_BY_TYPE: Record<CashEntryType, readonly CashCategory[]> = {
+  income: ['platform_payout', 'other_income'],
+  expense: ['ingredient', 'packaging', 'equipment', 'utility', 'labor', 'other'],
+  transfer: ['owner_draw'],
+}
+
+export function isCashEntryType(value: unknown): value is CashEntryType {
+  return (CASH_ENTRY_TYPES as readonly string[]).includes(String(value))
+}
+
+export function isCashCategory(value: unknown): value is CashCategory {
+  return (CASH_CATEGORIES as readonly string[]).includes(String(value))
+}
+
+export function isCashPaymentMethod(value: unknown): value is CashPaymentMethod {
+  return (CASH_PAYMENT_METHODS as readonly string[]).includes(String(value))
+}
+
+export interface CashEntry {
+  id: string
+  userId: string
+  type: CashEntryType
+  category: CashCategory
+  amount: number
+  occurredAt: string
+  paymentMethod: CashPaymentMethod
+  counterparty?: string
+  note?: string
+  periodFrom?: string
+  periodTo?: string
+  grossAmount?: number
+  feeAmount?: number
+  adjustmentAmount?: number
+  ingredientId?: string
+  quantity?: number
+  unit?: string
+  isAsset: boolean
+  planId?: string
+  createdAt: string
+  updatedAt: string
+  ingredient?: Ingredient
+  planName?: string
+}
+
+export interface CashEntryPayload {
+  type: CashEntryType
+  category: CashCategory
+  amount: number
+  occurredAt: string
+  paymentMethod: CashPaymentMethod
+  counterparty?: string
+  note?: string
+  periodFrom?: string
+  periodTo?: string
+  grossAmount?: number
+  feeAmount?: number
+  adjustmentAmount?: number
+  ingredientId?: string
+  quantity?: number
+  unit?: string
+  isAsset?: boolean
+  planId?: string
+}
+
+export interface CashbookSummary {
+  income: number
+  operatingExpense: number
+  assetSpend: number
+  ownerDraw: number
+  operatingCash: number
+  byCategory: Array<{ category: CashCategory; amount: number }>
+}

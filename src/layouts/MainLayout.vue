@@ -112,6 +112,7 @@ const navItems = [
   { label: 'บรรจุภัณฑ์', to: '/packaging' },
   { label: 'วางแผนซื้อ', to: '/planning' },
   { label: 'บันทึกยอดขาย', to: '/sales' },
+  { label: 'รายรับ-จ่าย', to: '/cashbook' },
   { label: 'คำนวนรายได้', to: '/revenue' },
   { label: 'ตั้งค่า', to: '/settings' },
 ]

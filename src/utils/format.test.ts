@@ -8,6 +8,7 @@ import {
   isDateInInclusiveRange,
   latestDateValue,
   monthCalendarDays,
+  monthDateRange,
   normalizeDateRange,
   parseLocalDate,
   toDateInputValue,
@@ -83,6 +84,22 @@ describe('formatSaleDateRange', () => {
 describe('formatMonthYear', () => {
   it('formats a Gregorian month and year in Thai', () => {
     expect(formatMonthYear(new Date(2026, 7, 1))).toBe('สิงหาคม 2026')
+  })
+})
+
+describe('monthDateRange', () => {
+  it('returns the first and last calendar day of the month', () => {
+    expect(monthDateRange(new Date(2026, 7, 23))).toEqual({
+      from: '2026-08-01',
+      to: '2026-08-31',
+    })
+  })
+
+  it('parses a date-only string without shifting the month', () => {
+    expect(monthDateRange('2026-02-10')).toEqual({
+      from: '2026-02-01',
+      to: '2026-02-28',
+    })
   })
 })
 

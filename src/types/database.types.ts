@@ -411,6 +411,78 @@ export interface Database {
         }
         Relationships: []
       }
+      cash_entries: {
+        Row: {
+          id: string
+          user_id: string
+          type: 'income' | 'expense' | 'transfer'
+          category: string
+          amount: number
+          occurred_at: string
+          payment_method: 'cash' | 'bank_transfer'
+          counterparty: string | null
+          note: string | null
+          period_from: string | null
+          period_to: string | null
+          gross_amount: number | null
+          fee_amount: number | null
+          adjustment_amount: number | null
+          ingredient_id: string | null
+          quantity: number | null
+          unit: string | null
+          is_asset: boolean
+          plan_id: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          type: 'income' | 'expense' | 'transfer'
+          category: string
+          amount: number
+          occurred_at?: string
+          payment_method?: 'cash' | 'bank_transfer'
+          counterparty?: string | null
+          note?: string | null
+          period_from?: string | null
+          period_to?: string | null
+          gross_amount?: number | null
+          fee_amount?: number | null
+          adjustment_amount?: number | null
+          ingredient_id?: string | null
+          quantity?: number | null
+          unit?: string | null
+          is_asset?: boolean
+          plan_id?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          type?: 'income' | 'expense' | 'transfer'
+          category?: string
+          amount?: number
+          occurred_at?: string
+          payment_method?: 'cash' | 'bank_transfer'
+          counterparty?: string | null
+          note?: string | null
+          period_from?: string | null
+          period_to?: string | null
+          gross_amount?: number | null
+          fee_amount?: number | null
+          adjustment_amount?: number | null
+          ingredient_id?: string | null
+          quantity?: number | null
+          unit?: string | null
+          is_asset?: boolean
+          plan_id?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: Record<string, never>
     Functions: Record<string, never>

@@ -98,6 +98,12 @@ const router = createRouter({
       meta: { requiresAuth: true, title: 'ยอดขายจริง vs เป้า' },
     },
     {
+      path: '/cashbook',
+      name: 'Cashbook',
+      component: () => import('@/views/CashbookView.vue'),
+      meta: { requiresAuth: true, title: 'รายรับ-รายจ่าย' },
+    },
+    {
       path: '/settings',
       name: 'Settings',
       component: () => import('@/views/SettingsView.vue'),

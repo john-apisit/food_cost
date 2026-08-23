@@ -99,12 +99,13 @@
 
       <div class="card p-5">
         <h2 class="text-lg font-bold mb-4">ทางลัด</h2>
-        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-7 gap-3">
           <router-link to="/ingredients" class="btn-secondary text-center">เพิ่มวัตถุดิบ</router-link>
           <router-link to="/menu/new" class="btn-secondary text-center">เพิ่มเมนู</router-link>
           <router-link to="/combos" class="btn-secondary text-center">สร้างชุดโปร</router-link>
           <router-link to="/comparison" class="btn-secondary text-center">เปรียบเทียบเมนู</router-link>
           <router-link to="/planning" class="btn-secondary text-center">วางแผนซื้อ</router-link>
+          <router-link to="/cashbook" class="btn-secondary text-center">รายรับ-รายจ่าย</router-link>
           <router-link to="/revenue" class="btn-secondary text-center">ประมาณการรายได้</router-link>
         </div>
       </div>
