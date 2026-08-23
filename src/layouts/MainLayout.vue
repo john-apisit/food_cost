@@ -1,102 +1,126 @@
 <template>
   <div class="min-h-screen bg-gray-50">
-    <nav class="bg-white shadow-sm sticky top-0 z-40">
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="flex justify-between h-16">
-          <div class="flex items-center min-w-0">
-            <router-link to="/dashboard" class="flex-shrink-0 flex items-center gap-2">
-              <span class="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-primary-500 text-white font-bold">F</span>
-              <h1 class="text-lg font-bold text-primary-600 hidden sm:block">Food Cost</h1>
-            </router-link>
-            <div class="hidden lg:ml-8 lg:flex lg:space-x-6">
-              <router-link
-                v-for="item in navItems"
-                :key="item.to"
-                :to="item.to"
-                class="inline-flex items-center px-1 pt-1 text-sm font-medium border-b-2 transition-colors"
-                active-class="border-primary-500 text-gray-900"
-                inactive-class="border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-              >
-                {{ item.label }}
-              </router-link>
-            </div>
-          </div>
-          <div class="flex items-center gap-3">
-            <button
-              class="lg:hidden p-2 text-gray-600"
-              type="button"
-              aria-label="เปิดเมนู"
-              @click="mobileOpen = !mobileOpen"
-            >
-              <X v-if="mobileOpen" class="h-6 w-6" />
-              <Menu v-else class="h-6 w-6" />
-            </button>
-            <router-link
-              to="/profile"
-              class="hidden sm:inline-flex items-center max-w-[10rem] truncate text-gray-500 hover:text-gray-700 text-sm font-medium"
-            >
-              {{ profileLabel }}
-            </router-link>
-            <button
-              type="button"
-              class="hidden sm:inline text-gray-500 hover:text-gray-700 text-sm font-medium"
-              @click="handleSignOut"
-            >
-              ออกจากระบบ
-            </button>
-          </div>
-        </div>
-      </div>
+    <header class="lg:hidden sticky top-0 z-40 flex h-14 items-center justify-between gap-3 border-b border-gray-200 bg-white px-4">
+      <router-link to="/dashboard" class="flex min-w-0 items-center gap-2">
+        <span class="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-primary-500 text-white font-bold">F</span>
+        <span class="truncate text-lg font-bold text-primary-600">Food Cost</span>
+      </router-link>
+      <button
+        type="button"
+        class="p-2 text-gray-600"
+        :aria-expanded="mobileOpen"
+        aria-controls="app-sidebar"
+        aria-label="เปิดเมนู"
+        @click="mobileOpen = true"
+      >
+        <Menu class="h-6 w-6" />
+      </button>
+    </header>
 
-      <div v-if="mobileOpen" class="lg:hidden border-t bg-white">
-        <div class="px-4 py-3 space-y-1">
-          <router-link
-            v-for="item in navItems"
-            :key="item.to"
-            :to="item.to"
-            class="block rounded-lg px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
-            active-class="bg-primary-50 text-primary-700"
-            @click="mobileOpen = false"
-          >
-            {{ item.label }}
-          </router-link>
-          <router-link
-            to="/profile"
-            class="block rounded-lg px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
-            active-class="bg-primary-50 text-primary-700"
-            @click="mobileOpen = false"
-          >
-            โปรไฟล์
-          </router-link>
-          <button
-            type="button"
-            class="block w-full text-left rounded-lg px-3 py-2 text-sm font-medium text-red-600"
-            @click="handleSignOut"
-          >
-            ออกจากระบบ
-          </button>
-        </div>
-      </div>
-    </nav>
+    <div
+      v-if="mobileOpen"
+      class="fixed inset-0 z-40 bg-black/40 lg:hidden"
+      @click="mobileOpen = false"
+    />
 
-    <slot name="banner" />
-
-    <main
-      class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-6 sm:pb-8"
-      :class="hasBanner ? 'pt-2 sm:pt-3' : 'pt-6 sm:pt-8'"
+    <aside
+      id="app-sidebar"
+      class="fixed inset-y-0 left-0 z-50 flex w-64 flex-col border-r border-gray-200 bg-white transition-transform duration-200 ease-out lg:translate-x-0"
+      :class="mobileOpen ? 'translate-x-0' : '-translate-x-full'"
     >
-      <slot />
-    </main>
+      <div class="flex h-16 items-center justify-between gap-2 border-b border-gray-100 px-4">
+        <router-link
+          to="/dashboard"
+          class="flex min-w-0 items-center gap-2"
+          @click="mobileOpen = false"
+        >
+          <span class="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-primary-500 text-white font-bold">F</span>
+          <span class="truncate text-lg font-bold text-primary-600">Food Cost</span>
+        </router-link>
+        <button
+          type="button"
+          class="p-1.5 text-gray-500 lg:hidden"
+          aria-label="ปิดเมนู"
+          @click="mobileOpen = false"
+        >
+          <X class="h-5 w-5" />
+        </button>
+      </div>
+
+      <nav class="flex-1 space-y-0.5 overflow-y-auto px-3 py-3">
+        <router-link
+          v-for="item in navItems"
+          :key="item.to"
+          :to="item.to"
+          class="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors"
+          active-class="bg-primary-50 text-primary-700"
+          inactive-class="text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+          @click="mobileOpen = false"
+        >
+          <component :is="item.icon" class="h-5 w-5 shrink-0" />
+          {{ item.label }}
+        </router-link>
+      </nav>
+
+      <div class="space-y-1 border-t border-gray-100 p-3">
+        <router-link
+          to="/profile"
+          class="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+          active-class="bg-primary-50 text-primary-700"
+          @click="mobileOpen = false"
+        >
+          <User class="h-5 w-5 shrink-0" />
+          <span class="truncate">{{ profileLabel }}</span>
+        </router-link>
+        <button
+          type="button"
+          class="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-red-600 hover:bg-red-50"
+          @click="handleSignOut"
+        >
+          <LogOut class="h-5 w-5 shrink-0" />
+          ออกจากระบบ
+        </button>
+      </div>
+    </aside>
+
+    <div class="lg:pl-64">
+      <slot name="banner" />
+
+      <main
+        class="mx-auto max-w-7xl px-4 pb-6 sm:px-6 sm:pb-8 lg:px-8"
+        :class="hasBanner ? 'pt-2 sm:pt-3' : 'pt-6 sm:pt-8'"
+      >
+        <slot />
+      </main>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, ref, useSlots } from 'vue'
-import { useRouter } from 'vue-router'
-import { Menu, X } from 'lucide-vue-next'
+import { computed, onMounted, onUnmounted, ref, useSlots, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import type { Component } from 'vue'
+import {
+  BarChart3,
+  Calculator,
+  ClipboardList,
+  Home,
+  Layers,
+  Leaf,
+  LogOut,
+  Menu,
+  Package,
+  Settings,
+  Truck,
+  User,
+  UtensilsCrossed,
+  Wallet,
+  X,
+} from 'lucide-vue-next'
 import { useAuth } from '@/composables/useAuth'
 
 const router = useRouter()
+const route = useRoute()
 const slots = useSlots()
 const { signOut, user, displayName } = useAuth()
 const mobileOpen = ref(false)
@@ -104,19 +128,43 @@ const mobileOpen = ref(false)
 const hasBanner = computed(() => Boolean(slots.banner))
 const profileLabel = computed(() => displayName.value || user.value?.email || 'โปรไฟล์')
 
-const navItems = [
-  { label: 'หน้าแรก', to: '/dashboard' },
-  { label: 'เมนู', to: '/menu' },
-  { label: 'ชุดโปร', to: '/combos' },
-  { label: 'วัตถุดิบ', to: '/ingredients' },
-  { label: 'บรรจุภัณฑ์', to: '/packaging' },
-  { label: 'ซัพพลายเออร์', to: '/suppliers' },
-  { label: 'วางแผนซื้อ', to: '/planning' },
-  { label: 'บันทึกยอดขาย', to: '/sales' },
-  { label: 'รายรับ-จ่าย', to: '/cashbook' },
-  { label: 'คำนวนรายได้', to: '/revenue' },
-  { label: 'ตั้งค่า', to: '/settings' },
+const navItems: { label: string; to: string; icon: Component }[] = [
+  { label: 'หน้าแรก', to: '/dashboard', icon: Home },
+  { label: 'เมนู', to: '/menu', icon: UtensilsCrossed },
+  { label: 'ชุดโปร', to: '/combos', icon: Layers },
+  { label: 'วัตถุดิบ', to: '/ingredients', icon: Leaf },
+  { label: 'บรรจุภัณฑ์', to: '/packaging', icon: Package },
+  { label: 'ซัพพลายเออร์', to: '/suppliers', icon: Truck },
+  { label: 'วางแผนซื้อ', to: '/planning', icon: ClipboardList },
+  { label: 'บันทึกยอดขาย', to: '/sales', icon: BarChart3 },
+  { label: 'รายรับ-จ่าย', to: '/cashbook', icon: Wallet },
+  { label: 'คำนวนรายได้', to: '/revenue', icon: Calculator },
+  { label: 'ตั้งค่า', to: '/settings', icon: Settings },
 ]
+
+watch(
+  () => route.fullPath,
+  () => {
+    mobileOpen.value = false
+  },
+)
+
+watch(mobileOpen, (open: boolean) => {
+  document.body.style.overflow = open ? 'hidden' : ''
+})
+
+const onKeydown = (event: KeyboardEvent) => {
+  if (event.key === 'Escape') mobileOpen.value = false
+}
+
+onMounted(() => {
+  window.addEventListener('keydown', onKeydown)
+})
+
+onUnmounted(() => {
+  window.removeEventListener('keydown', onKeydown)
+  document.body.style.overflow = ''
+})
 
 const handleSignOut = async () => {
   try {

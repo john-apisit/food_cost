@@ -82,7 +82,7 @@
         <div class="card p-5">
           <h3 class="font-semibold mb-3">รายได้รายวัน</h3>
           <VueApexCharts
-            :key="`trend-${rangeDays}`"
+            :key="`trend-${rangeDays}-${theme}`"
             type="area"
             height="300"
             :options="trendOptions"
@@ -94,7 +94,7 @@
           <div class="card p-5">
             <h3 class="font-semibold mb-3">ยอดจริง vs เป้า</h3>
             <VueApexCharts
-              :key="`target-${rangeDays}`"
+              :key="`target-${rangeDays}-${theme}`"
               type="bar"
               height="300"
               :options="vsTargetOptions"
@@ -105,7 +105,7 @@
             <h3 class="font-semibold mb-3">เมนูขายดี</h3>
             <VueApexCharts
               v-if="topMenus.length"
-              :key="`top-${rangeDays}`"
+              :key="`top-${rangeDays}-${theme}`"
               type="bar"
               :height="topMenusHeight"
               :options="topMenusOptions"
@@ -125,12 +125,36 @@ import type { ApexOptions } from 'apexcharts'
 import VueApexCharts from 'vue3-apexcharts'
 import EmptyState from '@/components/common/EmptyState.vue'
 import { useDashboardSales } from '@/composables/useDashboardSales'
+import { useTheme } from '@/composables/useTheme'
 import { formatCurrency, formatNumber, formatSaleDateRange } from '@/utils/format'
 import { SALES_CHART_PRESETS, formatChartBaht } from '@/utils/salesChart'
 
 const CHART_FONT = 'IBM Plex Sans Thai, Noto Sans Thai, ui-sans-serif, system-ui, sans-serif'
 const PRIMARY = '#e68900'
-const TARGET = '#9ca3af'
+const TARGET_LIGHT = '#9ca3af'
+const TARGET_DARK = '#6b7280'
+
+const { theme, isDark } = useTheme()
+
+const chartPalette = computed(() =>
+  isDark.value
+    ? {
+        grid: '#374151',
+        axis: '#4b5563',
+        label: '#9ca3af',
+        labelStrong: '#d1d5db',
+        target: TARGET_DARK,
+        tooltip: 'dark' as const,
+      }
+    : {
+        grid: '#f3f4f6',
+        axis: '#e5e7eb',
+        label: '#6b7280',
+        labelStrong: '#374151',
+        target: TARGET_LIGHT,
+        tooltip: 'light' as const,
+      },
+)
 
 const {
   loading,
@@ -168,6 +192,8 @@ const rankedMenus = computed(() => [...topMenus.value].reverse())
 
 const baseChart = (): ApexOptions['chart'] => ({
   fontFamily: CHART_FONT,
+  background: 'transparent',
+  foreColor: chartPalette.value.label,
   toolbar: { show: false },
   zoom: { enabled: false },
   animations: { enabled: true, speed: 400 },
@@ -186,25 +212,26 @@ const trendOptions = computed<ApexOptions>(() => ({
     type: 'gradient',
     gradient: { shadeIntensity: 1, opacityFrom: 0.4, opacityTo: 0.05, stops: [0, 100] },
   },
-  grid: { borderColor: '#f3f4f6', strokeDashArray: 4, padding: { left: 8, right: 8 } },
+  grid: { borderColor: chartPalette.value.grid, strokeDashArray: 4, padding: { left: 8, right: 8 } },
   xaxis: {
     categories: daily.value.map((point) => point.label),
     labels: {
       rotate: daily.value.length > 14 ? -45 : 0,
       hideOverlappingLabels: true,
-      style: { colors: '#6b7280', fontSize: '12px' },
+      style: { colors: chartPalette.value.label, fontSize: '12px' },
     },
-    axisBorder: { color: '#e5e7eb' },
-    axisTicks: { color: '#e5e7eb' },
+    axisBorder: { color: chartPalette.value.axis },
+    axisTicks: { color: chartPalette.value.axis },
   },
   yaxis: {
     min: 0,
     labels: {
       formatter: (value) => formatChartBaht(value),
-      style: { colors: '#6b7280', fontSize: '12px' },
+      style: { colors: chartPalette.value.label, fontSize: '12px' },
     },
   },
   tooltip: {
+    theme: chartPalette.value.tooltip,
     y: { formatter: (value) => formatCurrency(value) },
   },
 }))
@@ -216,29 +243,35 @@ const vsTargetSeries = computed(() => [
 
 const vsTargetOptions = computed<ApexOptions>(() => ({
   chart: { ...baseChart(), type: 'bar' },
-  colors: [PRIMARY, TARGET],
+  colors: [PRIMARY, chartPalette.value.target],
   plotOptions: { bar: { columnWidth: daily.value.length > 14 ? '70%' : '45%', borderRadius: 4 } },
   dataLabels: { enabled: false },
-  grid: { borderColor: '#f3f4f6', strokeDashArray: 4, padding: { left: 8, right: 8 } },
+  grid: { borderColor: chartPalette.value.grid, strokeDashArray: 4, padding: { left: 8, right: 8 } },
   xaxis: {
     categories: daily.value.map((point) => point.label),
     labels: {
       rotate: daily.value.length > 14 ? -45 : 0,
       hideOverlappingLabels: true,
-      style: { colors: '#6b7280', fontSize: '12px' },
+      style: { colors: chartPalette.value.label, fontSize: '12px' },
     },
-    axisBorder: { color: '#e5e7eb' },
-    axisTicks: { color: '#e5e7eb' },
+    axisBorder: { color: chartPalette.value.axis },
+    axisTicks: { color: chartPalette.value.axis },
   },
   yaxis: {
     min: 0,
     labels: {
       formatter: (value) => formatNumber(value, 0),
-      style: { colors: '#6b7280', fontSize: '12px' },
+      style: { colors: chartPalette.value.label, fontSize: '12px' },
     },
   },
-  legend: { position: 'top', horizontalAlign: 'right', fontFamily: CHART_FONT },
+  legend: {
+    position: 'top',
+    horizontalAlign: 'right',
+    fontFamily: CHART_FONT,
+    labels: { colors: chartPalette.value.labelStrong },
+  },
   tooltip: {
+    theme: chartPalette.value.tooltip,
     y: { formatter: (value) => `${formatNumber(value, 0)} ชิ้น` },
   },
 }))
@@ -252,7 +285,7 @@ const topMenusOptions = computed<ApexOptions>(() => ({
   colors: [PRIMARY],
   plotOptions: { bar: { horizontal: true, barHeight: '58%', borderRadius: 4 } },
   dataLabels: { enabled: false },
-  grid: { borderColor: '#f3f4f6', strokeDashArray: 4, padding: { left: 4, right: 8 } },
+  grid: { borderColor: chartPalette.value.grid, strokeDashArray: 4, padding: { left: 4, right: 8 } },
   xaxis: {
     categories: rankedMenus.value.map((item) => item.name),
     labels: {
@@ -262,16 +295,17 @@ const topMenusOptions = computed<ApexOptions>(() => ({
           ? formatChartBaht(numeric)
           : String(value)
       },
-      style: { colors: '#6b7280', fontSize: '12px' },
+      style: { colors: chartPalette.value.label, fontSize: '12px' },
     },
   },
   yaxis: {
     labels: {
       maxWidth: 140,
-      style: { colors: '#374151', fontSize: '12px' },
+      style: { colors: chartPalette.value.labelStrong, fontSize: '12px' },
     },
   },
   tooltip: {
+    theme: chartPalette.value.tooltip,
     y: {
       formatter: (value, opts) => {
         const item = rankedMenus.value[opts?.dataPointIndex ?? -1]

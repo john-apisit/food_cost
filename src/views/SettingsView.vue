@@ -6,6 +6,29 @@
         <p class="text-gray-500 mt-1">ข้อมูลร้าน ค่าบริการ LINE MAN และต้นทุนคงที่ต่อหน่วยขาย</p>
       </div>
 
+      <section class="card p-6 space-y-3">
+        <div>
+          <h2 class="font-semibold text-lg">ธีม</h2>
+          <p class="text-sm text-gray-500 mt-1">เลือกโหมดสีของแอป ค่าเริ่มต้นเป็นสว่าง</p>
+        </div>
+        <div class="inline-flex rounded-lg border border-gray-200 bg-gray-50 p-1">
+          <button
+            v-for="option in themeOptions"
+            :key="option.value"
+            type="button"
+            class="inline-flex items-center gap-2 rounded-md px-4 py-2 text-sm font-medium transition-colors"
+            :aria-pressed="theme === option.value"
+            :class="theme === option.value
+              ? 'bg-primary-500 text-white shadow-sm'
+              : 'text-gray-600 hover:text-gray-900'"
+            @click="setTheme(option.value)"
+          >
+            <component :is="option.icon" class="h-4 w-4" />
+            {{ option.label }}
+          </button>
+        </div>
+      </section>
+
       <form v-if="form" class="space-y-6" @submit.prevent="save">
         <section class="card p-6 space-y-4">
           <h2 class="font-semibold text-lg">ข้อมูลร้าน</h2>
@@ -167,14 +190,22 @@
 
 <script setup lang="ts">
 import { computed, onMounted, reactive, watch } from 'vue'
+import { Moon, Sun } from 'lucide-vue-next'
 import MainLayout from '@/layouts/MainLayout.vue'
 import { useStoreSettings } from '@/composables/useStoreSettings'
+import { useTheme, type Theme } from '@/composables/useTheme'
 import { useToast } from '@/composables/useToast'
 import { WEEKDAY_LABELS, WEEKDAYS, type Weekday } from '@/types/models'
 import { googleMapsEmbedUrl } from '@/utils/googleMaps'
 
 const { settings, loading, fetchSettings, updateSettings } = useStoreSettings()
+const { theme, setTheme } = useTheme()
 const { success, error } = useToast()
+
+const themeOptions: { value: Theme; label: string; icon: typeof Sun }[] = [
+  { value: 'light', label: 'สว่าง', icon: Sun },
+  { value: 'dark', label: 'มืด', icon: Moon },
+]
 
 const form = reactive({
   storeName: '',
