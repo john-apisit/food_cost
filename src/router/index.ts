@@ -44,6 +44,12 @@ const router = createRouter({
       meta: { requiresAuth: true, title: 'บรรจุภัณฑ์' },
     },
     {
+      path: '/suppliers',
+      name: 'Suppliers',
+      component: () => import('@/views/SuppliersView.vue'),
+      meta: { requiresAuth: true, title: 'ซัพพลายเออร์' },
+    },
+    {
       path: '/menu',
       name: 'Menu',
       component: () => import('@/views/MenuView.vue'),

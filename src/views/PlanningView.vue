@@ -145,7 +145,7 @@
         </div>
 
         <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
-          <div v-for="group in supplierGroups" :key="group.supplier" class="card p-4">
+          <div v-for="group in supplierGroups" :key="group.supplierId ?? 'unspecified'" class="card p-4">
             <p class="text-sm font-medium text-gray-700">{{ group.supplier }}</p>
             <p class="text-xl font-bold mt-1">{{ formatCurrency(group.totalCost) }}</p>
             <p class="text-xs text-gray-500 mt-1">{{ group.items.length }} รายการ</p>
@@ -169,7 +169,7 @@
                 </tr>
               </thead>
               <tbody>
-                <template v-for="group in supplierGroups" :key="group.supplier">
+                <template v-for="group in supplierGroups" :key="group.supplierId ?? 'unspecified'">
                   <tr class="bg-primary-50">
                     <td colspan="6" class="px-4 py-2.5 font-semibold text-gray-900">
                       {{ group.supplier }}
@@ -258,7 +258,7 @@
             <tr v-for="row in menuBrandItems" :key="row.item.ingredient.id" class="border-t border-gray-100">
               <td class="py-2.5 pr-3 font-medium">{{ row.item.ingredient.name }}</td>
               <td class="py-2.5 pr-3 text-gray-600">{{ purchaseCategoryLabel(row.item) }}</td>
-              <td class="py-2.5 pr-3">{{ row.item.ingredient.supplier || 'ไม่ระบุ' }}</td>
+              <td class="py-2.5 pr-3">{{ row.item.ingredient.supplier?.name || 'ไม่ระบุ' }}</td>
               <td class="py-2.5 pr-3 text-gray-600 whitespace-pre-line">{{ row.item.ingredient.notes || '-' }}</td>
               <td class="py-2.5 text-right whitespace-nowrap">
                 {{ formatNumber(row.quantity) }} {{ row.item.ingredient.unit }}

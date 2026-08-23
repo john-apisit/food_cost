@@ -16,6 +16,7 @@ import {
   type RecipeLine,
   type SalesRecord,
   type StoreSettings,
+  type Supplier,
 } from './models'
 
 function num(value: unknown, fallback = 0): number {
@@ -70,7 +71,30 @@ export function mapStoreSettings(row: Record<string, unknown>): StoreSettings {
   }
 }
 
+function nestedRow(value: unknown): Record<string, unknown> | undefined {
+  if (value == null) return undefined
+  if (Array.isArray(value)) {
+    const first = value[0]
+    return first && typeof first === 'object' ? (first as Record<string, unknown>) : undefined
+  }
+  if (typeof value === 'object') return value as Record<string, unknown>
+  return undefined
+}
+
+export function mapSupplier(row: Record<string, unknown>): Supplier {
+  return {
+    id: String(row.id),
+    userId: String(row.user_id),
+    name: String(row.name),
+    notes: optStr(row.notes),
+    isActive: Boolean(row.is_active),
+    createdAt: String(row.created_at),
+    updatedAt: String(row.updated_at),
+  }
+}
+
 export function mapIngredient(row: Record<string, unknown>): Ingredient {
+  const supplierRow = nestedRow(row.supplier ?? row.suppliers)
   return {
     id: String(row.id),
     userId: String(row.user_id),
@@ -79,7 +103,8 @@ export function mapIngredient(row: Record<string, unknown>): Ingredient {
     pricePerUnit: num(row.price_per_unit),
     type: String(row.type).trim() === 'packaging' ? 'packaging' : 'ingredient',
     category: optStr(row.category),
-    supplier: optStr(row.supplier),
+    supplierId: optStr(row.supplier_id) ?? optStr(supplierRow?.id),
+    supplier: supplierRow ? mapSupplier(supplierRow) : undefined,
     notes: optStr(row.notes),
     isActive: Boolean(row.is_active),
     createdAt: String(row.created_at),
@@ -243,16 +268,9 @@ export function mapSalesRecord(row: Record<string, unknown>): SalesRecord {
 }
 
 export function mapCashEntry(row: Record<string, unknown>): CashEntry {
-  const ingredientRaw = (row.ingredient ?? row.ingredients) as
-    | Record<string, unknown>
-    | Record<string, unknown>[]
-    | undefined
-  const ingredientRow = Array.isArray(ingredientRaw) ? ingredientRaw[0] : ingredientRaw
-  const planRaw = (row.plan ?? row.purchase_plans) as
-    | Record<string, unknown>
-    | Record<string, unknown>[]
-    | undefined
-  const planRow = Array.isArray(planRaw) ? planRaw[0] : planRaw
+  const ingredientRow = nestedRow(row.ingredient ?? row.ingredients)
+  const supplierRow = nestedRow(row.supplier ?? row.suppliers)
+  const planRow = nestedRow(row.plan ?? row.purchase_plans)
 
   return {
     id: String(row.id),
@@ -270,6 +288,7 @@ export function mapCashEntry(row: Record<string, unknown>): CashEntry {
     feeAmount: row.fee_amount == null ? undefined : num(row.fee_amount),
     adjustmentAmount: row.adjustment_amount == null ? undefined : num(row.adjustment_amount),
     ingredientId: optStr(row.ingredient_id),
+    supplierId: optStr(row.supplier_id) ?? (supplierRow ? String(supplierRow.id) : undefined),
     quantity: row.quantity == null ? undefined : num(row.quantity),
     unit: optStr(row.unit),
     isAsset: Boolean(row.is_asset),
@@ -277,6 +296,7 @@ export function mapCashEntry(row: Record<string, unknown>): CashEntry {
     createdAt: String(row.created_at),
     updatedAt: String(row.updated_at),
     ingredient: ingredientRow ? mapIngredient(ingredientRow) : undefined,
+    supplier: supplierRow ? mapSupplier(supplierRow) : undefined,
     planName: optStr(planRow?.name),
   }
 }

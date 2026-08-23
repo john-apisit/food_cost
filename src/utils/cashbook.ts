@@ -48,8 +48,9 @@ export function defaultCounterpartyFromSupplier(
   return next || current
 }
 
-export function cashEntryTitle(entry: Pick<CashEntry, 'category' | 'counterparty' | 'ingredient' | 'note'>): string {
+export function cashEntryTitle(entry: Pick<CashEntry, 'category' | 'counterparty' | 'ingredient' | 'supplier' | 'note'>): string {
   if (entry.ingredient?.name) return entry.ingredient.name
+  if (entry.supplier?.name?.trim()) return entry.supplier.name.trim()
   if (entry.counterparty?.trim()) return entry.counterparty.trim()
   if (entry.note?.trim()) return entry.note.trim()
   return CASH_CATEGORY_LABELS[entry.category]

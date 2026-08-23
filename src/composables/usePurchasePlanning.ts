@@ -6,6 +6,7 @@ import {
   type PurchaseCategoryGroup,
   type PurchaseItem,
   type PurchaseSupplierGroup,
+  ingredientSupplierName,
 } from '@/types/models'
 import { getPackagingPresetLines } from '@/utils/packagingPresets'
 
@@ -41,9 +42,8 @@ export function uniquePrepSteps(
   return Array.from(map.values()).sort((a, b) => a.step.localeCompare(b.step, 'th'))
 }
 
-export function supplierLabel(supplier?: string | null): string {
-  const trimmed = supplier?.trim()
-  return trimmed || UNSPECIFIED_SUPPLIER
+export function supplierLabel(ingredient?: Pick<Ingredient, 'supplier' | 'supplierId'> | null): string {
+  return ingredientSupplierName(ingredient) || UNSPECIFIED_SUPPLIER
 }
 
 export function purchaseCategoryLabel(item: PurchaseItem): string {
@@ -65,17 +65,18 @@ export function groupPurchaseItemsBySupplier(items: PurchaseItem[]): PurchaseSup
   const map = new Map<string, PurchaseItem[]>()
 
   for (const item of items) {
-    const key = supplierLabel(item.ingredient.supplier)
+    const key = item.ingredient.supplierId || item.ingredient.supplier?.id || UNSPECIFIED_SUPPLIER
     const list = map.get(key)
     if (list) list.push(item)
     else map.set(key, [item])
   }
 
   return Array.from(map.entries())
-    .map(([supplier, groupItems]) => {
+    .map(([key, groupItems]) => {
       const itemsByCategory = [...groupItems].sort(comparePurchaseItemsByCategory)
       return {
-        supplier,
+        supplierId: key === UNSPECIFIED_SUPPLIER ? undefined : key,
+        supplier: supplierLabel(groupItems[0]?.ingredient),
         items: itemsByCategory,
         totalCost: itemsByCategory.reduce((sum, item) => sum + item.totalCost, 0),
       }

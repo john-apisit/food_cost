@@ -51,7 +51,11 @@
         </div>
       </div>
 
-      <div>
+      <div v-if="form.type === 'expense'">
+        <label class="block text-sm font-medium text-gray-700 mb-1">ซัพพลายเออร์</label>
+        <SupplierSelect v-model="form.supplierId" :fallback-label="entry?.supplier?.name || entry?.counterparty" />
+      </div>
+      <div v-else>
         <label class="block text-sm font-medium text-gray-700 mb-1">{{ counterpartyLabel }}</label>
         <input v-model="form.counterparty" type="text" class="input-field w-full" :placeholder="counterpartyPlaceholder" />
       </div>
@@ -163,6 +167,7 @@
 import { computed, reactive, ref, watch } from 'vue'
 import Modal from '@/components/common/Modal.vue'
 import DatePicker from '@/components/common/DatePicker.vue'
+import SupplierSelect from '@/components/suppliers/SupplierSelect.vue'
 import {
   CASH_CATEGORY_LABELS,
   CASH_ENTRY_TYPE_LABELS,
@@ -176,10 +181,10 @@ import {
   type PurchasePlan,
 } from '@/types/models'
 import { useCashEntries } from '@/composables/useCashEntries'
+import { useSuppliers } from '@/composables/useSuppliers'
 import {
   categoriesForType,
   defaultCategoryForType,
-  defaultCounterpartyFromSupplier,
   defaultIsAsset,
   defaultPaymentMethod,
   estimatePlatformPayout,
@@ -209,6 +214,7 @@ const emit = defineEmits<{
 }>()
 
 const { fetchPayoutEstimate } = useCashEntries()
+const { suppliers } = useSuppliers()
 
 const typeOptions: Array<{ value: CashEntryType; label: string; activeClass: string }> = [
   { value: 'income', label: CASH_ENTRY_TYPE_LABELS.income, activeClass: 'border-green-500 bg-green-50 text-green-800' },
@@ -223,6 +229,7 @@ const form = reactive({
   occurredAt: toDateInputValue(),
   paymentMethod: defaultPaymentMethod('ingredient'),
   counterparty: '',
+  supplierId: '',
   note: '',
   periodFrom: '',
   periodTo: '',
@@ -322,6 +329,10 @@ const resetFromEntry = (entry: CashEntry) => {
   form.occurredAt = entry.occurredAt
   form.paymentMethod = entry.paymentMethod
   form.counterparty = entry.counterparty ?? ''
+  form.supplierId =
+    entry.supplierId
+    || suppliers.value.find((item) => item.name === entry.counterparty)?.id
+    || ''
   form.note = entry.note ?? ''
   form.periodFrom = entry.periodFrom ?? ''
   form.periodTo = entry.periodTo ?? ''
@@ -344,6 +355,7 @@ const resetNew = (type: CashEntryType, category: CashCategory) => {
   form.occurredAt = toDateInputValue()
   form.paymentMethod = defaultPaymentMethod(category)
   form.counterparty = category === 'platform_payout' ? (props.platformName ?? '') : ''
+  form.supplierId = ''
   form.note = ''
   form.periodFrom = category === 'platform_payout' ? (props.defaultPeriod?.from ?? '') : ''
   form.periodTo = category === 'platform_payout' ? (props.defaultPeriod?.to ?? '') : ''
@@ -396,7 +408,7 @@ const onCategoryChange = () => {
 const onIngredientChange = () => {
   if (!selectedItem.value) return
   form.unit = selectedItem.value.unit
-  form.counterparty = defaultCounterpartyFromSupplier(form.counterparty, selectedItem.value.supplier)
+  if (selectedItem.value.supplierId) form.supplierId = selectedItem.value.supplierId
 }
 
 watch(
@@ -452,13 +464,18 @@ watch(
 
 const submit = () => {
   if (!canSave.value) return
+  const selectedSupplier = suppliers.value.find((item) => item.id === form.supplierId)
   const payload: CashEntryPayload = {
     type: form.type,
     category: form.category,
     amount: Number(form.amount),
     occurredAt: form.occurredAt,
     paymentMethod: form.paymentMethod,
-    counterparty: form.counterparty.trim() || undefined,
+    counterparty:
+      form.type === 'expense'
+        ? selectedSupplier?.name || undefined
+        : form.counterparty.trim() || undefined,
+    supplierId: form.type === 'expense' ? form.supplierId || undefined : undefined,
     note: form.note.trim() || undefined,
     periodFrom: form.category === 'platform_payout' ? form.periodFrom || undefined : undefined,
     periodTo: form.category === 'platform_payout' ? form.periodTo || undefined : undefined,

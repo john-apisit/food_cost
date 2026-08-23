@@ -6,6 +6,8 @@ import { mapIngredient, mapPriceHistory } from '@/types/mappers'
 import { STANDARD_PACKAGING } from '@/utils/packagingPresets'
 import { useAuth } from './useAuth'
 
+export const INGREDIENT_SELECT = '*, supplier:suppliers(*)'
+
 const ingredients = ref<Ingredient[]>([])
 const loading = ref(false)
 const error = ref<string | null>(null)
@@ -22,7 +24,7 @@ export function useIngredients() {
     try {
       let query = supabase
         .from('ingredients')
-        .select('*')
+        .select(INGREDIENT_SELECT)
         .eq('user_id', user.value.id)
         .order('name')
 
@@ -44,7 +46,7 @@ export function useIngredients() {
   const fetchIngredientById = async (id: string) => {
     const { data, error: fetchError } = await supabase
       .from('ingredients')
-      .select('*')
+      .select(INGREDIENT_SELECT)
       .eq('id', id)
       .single()
 
@@ -58,7 +60,7 @@ export function useIngredients() {
     pricePerUnit: number
     type: IngredientType
     category?: string
-    supplier?: string
+    supplierId?: string
     notes?: string
     isActive?: boolean
   }) => {
@@ -77,11 +79,11 @@ export function useIngredients() {
           price_per_unit: ingredient.pricePerUnit,
           type: ingredient.type,
           category: ingredient.category || null,
-          supplier: ingredient.supplier || null,
+          supplier_id: ingredient.supplierId || null,
           notes: ingredient.notes || null,
           is_active: ingredient.isActive ?? true,
         })
-        .select()
+        .select(INGREDIENT_SELECT)
         .single()
 
       if (insertError) throw insertError
@@ -108,7 +110,7 @@ export function useIngredients() {
       if (updates.pricePerUnit !== undefined) payload.price_per_unit = updates.pricePerUnit
       if (updates.type !== undefined) payload.type = updates.type
       if (updates.category !== undefined) payload.category = updates.category || null
-      if (updates.supplier !== undefined) payload.supplier = updates.supplier || null
+      if (updates.supplierId !== undefined) payload.supplier_id = updates.supplierId || null
       if (updates.notes !== undefined) payload.notes = updates.notes || null
       if (updates.isActive !== undefined) payload.is_active = updates.isActive
 
@@ -116,7 +118,7 @@ export function useIngredients() {
         .from('ingredients')
         .update(payload)
         .eq('id', id)
-        .select()
+        .select(INGREDIENT_SELECT)
         .single()
 
       if (updateError) throw updateError
@@ -159,7 +161,7 @@ export function useIngredients() {
 
     let query = supabase
       .from('ingredients')
-      .select('*')
+      .select(INGREDIENT_SELECT)
       .eq('user_id', user.value.id)
       .eq('is_active', true)
       .ilike('name', `%${searchTerm}%`)

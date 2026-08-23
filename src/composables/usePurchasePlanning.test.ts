@@ -8,7 +8,7 @@ import {
   uniquePrepSteps,
   usePurchasePlanning,
 } from '@/composables/usePurchasePlanning'
-import type { Ingredient, MenuItem, PurchaseItem } from '@/types/models'
+import type { Ingredient, MenuItem, PurchaseItem, Supplier } from '@/types/models'
 
 const pork: Ingredient = {
   id: 'i1',
@@ -32,6 +32,21 @@ const box: Ingredient = {
   isActive: true,
   createdAt: '',
   updatedAt: '',
+}
+
+function namedSupplier(id: string, name: string): Supplier {
+  return {
+    id,
+    userId: 'u1',
+    name,
+    isActive: true,
+    createdAt: '',
+    updatedAt: '',
+  }
+}
+
+function withSupplier(ingredient: Ingredient, supplier: Supplier): Ingredient {
+  return { ...ingredient, supplierId: supplier.id, supplier }
 }
 
 const friedRice: MenuItem = {
@@ -70,38 +85,40 @@ describe('purchase planning', () => {
   })
 
   it('groups purchase items by supplier and puts unspecified last', () => {
+    const makro = namedSupplier('s-makro', 'Makro')
+    const market = namedSupplier('s-market', 'ตลาดสด')
     const makroPork: PurchaseItem = {
-      ingredient: { ...pork, supplier: 'Makro', category: 'เนื้อสัตว์' },
+      ingredient: { ...withSupplier(pork, makro), category: 'เนื้อสัตว์' },
       totalQuantity: 2,
       totalCost: 300,
       fromMenus: [],
     }
     const marketVeg: PurchaseItem = {
-      ingredient: { ...pork, id: 'i2', name: 'กะหล่ำ', supplier: 'ตลาดสด', category: 'ผัก' },
+      ingredient: { ...withSupplier({ ...pork, id: 'i2', name: 'กะหล่ำ' }, market), category: 'ผัก' },
       totalQuantity: 1,
       totalCost: 40,
       fromMenus: [],
     }
     const unnamedBox: PurchaseItem = {
-      ingredient: { ...box, supplier: '  ' },
+      ingredient: { ...box },
       totalQuantity: 10,
       totalCost: 40,
       fromMenus: [],
     }
     const makroRice: PurchaseItem = {
-      ingredient: { ...pork, id: 'i3', name: 'ข้าว', supplier: 'Makro', category: 'ของแห้ง' },
+      ingredient: { ...withSupplier({ ...pork, id: 'i3', name: 'ข้าว' }, makro), category: 'ของแห้ง' },
       totalQuantity: 5,
       totalCost: 200,
       fromMenus: [],
     }
     const makroBox: PurchaseItem = {
-      ingredient: { ...box, id: 'p2', supplier: 'Makro' },
+      ingredient: withSupplier({ ...box, id: 'p2' }, makro),
       totalQuantity: 8,
       totalCost: 32,
       fromMenus: [],
     }
     const makroVeg: PurchaseItem = {
-      ingredient: { ...pork, id: 'i4', name: 'ต้นหอม', supplier: 'Makro', category: 'ผัก' },
+      ingredient: { ...withSupplier({ ...pork, id: 'i4', name: 'ต้นหอม' }, makro), category: 'ผัก' },
       totalQuantity: 1,
       totalCost: 20,
       fromMenus: [],
@@ -118,6 +135,9 @@ describe('purchase planning', () => {
     const byName = Object.fromEntries(groups.map((g) => [g.supplier, g]))
 
     expect(groups.map((g) => g.supplier)).toEqual(['ตลาดสด', 'Makro', UNSPECIFIED_SUPPLIER])
+    expect(byName.Makro.supplierId).toBe('s-makro')
+    expect(byName['ตลาดสด'].supplierId).toBe('s-market')
+    expect(byName[UNSPECIFIED_SUPPLIER].supplierId).toBeUndefined()
     expect(byName.Makro.items.map((item) => item.ingredient.name)).toEqual([
       'หมูสับ',
       'ต้นหอม',

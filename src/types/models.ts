@@ -76,6 +76,16 @@ export interface StoreSettings {
   updatedAt: string
 }
 
+export interface Supplier {
+  id: string
+  userId: string
+  name: string
+  notes?: string
+  isActive: boolean
+  createdAt: string
+  updatedAt: string
+}
+
 export interface Ingredient {
   id: string
   userId: string
@@ -84,11 +94,17 @@ export interface Ingredient {
   pricePerUnit: number
   type: IngredientType
   category?: string
-  supplier?: string
+  supplierId?: string
+  supplier?: Supplier
   notes?: string
   isActive: boolean
   createdAt: string
   updatedAt: string
+}
+
+export function ingredientSupplierName(ingredient?: Pick<Ingredient, 'supplier'> | null): string | undefined {
+  const name = ingredient?.supplier?.name?.trim()
+  return name || undefined
 }
 
 export interface PriceHistory {
@@ -232,6 +248,7 @@ export interface PurchaseItem {
 }
 
 export interface PurchaseSupplierGroup {
+  supplierId?: string
   supplier: string
   items: PurchaseItem[]
   totalCost: number
@@ -362,6 +379,7 @@ export interface CashEntry {
   feeAmount?: number
   adjustmentAmount?: number
   ingredientId?: string
+  supplierId?: string
   quantity?: number
   unit?: string
   isAsset: boolean
@@ -369,6 +387,7 @@ export interface CashEntry {
   createdAt: string
   updatedAt: string
   ingredient?: Ingredient
+  supplier?: Supplier
   planName?: string
 }
 
@@ -386,6 +405,7 @@ export interface CashEntryPayload {
   feeAmount?: number
   adjustmentAmount?: number
   ingredientId?: string
+  supplierId?: string
   quantity?: number
   unit?: string
   isAsset?: boolean

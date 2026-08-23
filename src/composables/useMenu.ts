@@ -8,7 +8,7 @@ const MENU_SELECT = `
   *,
   recipe_lines (
     *,
-    ingredient:ingredients (*)
+    ingredient:ingredients (*, supplier:suppliers(*))
   ),
   menu_addons:menu_addons!menu_addons_menu_item_id_fkey (
     *,
@@ -16,7 +16,7 @@ const MENU_SELECT = `
       *,
       recipe_lines (
         *,
-        ingredient:ingredients (*)
+        ingredient:ingredients (*, supplier:suppliers(*))
       )
     )
   )

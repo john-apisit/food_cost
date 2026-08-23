@@ -12,7 +12,8 @@ const error = ref<string | null>(null)
 
 const CASH_SELECT = `
   *,
-  ingredient:ingredients (id, user_id, name, unit, price_per_unit, type, category, supplier, notes, is_active, created_at, updated_at),
+  ingredient:ingredients (*, supplier:suppliers(*)),
+  supplier:suppliers (*),
   plan:purchase_plans (id, name)
 `
 
@@ -34,6 +35,7 @@ function toRow(userId: string, payload: CashEntryPayload): CashRow {
     fee_amount: payload.feeAmount ?? null,
     adjustment_amount: payload.adjustmentAmount ?? null,
     ingredient_id: payload.ingredientId || null,
+    supplier_id: payload.supplierId || null,
     quantity: payload.quantity ?? null,
     unit: payload.unit?.trim() || null,
     is_asset: payload.isAsset ?? false,

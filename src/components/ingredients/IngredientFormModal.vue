@@ -41,7 +41,7 @@
 
       <div>
         <label class="block text-sm font-medium text-gray-700 mb-1">ซัพพลายเออร์</label>
-        <input v-model="formData.supplier" type="text" class="input-field w-full" />
+        <SupplierSelect v-model="formData.supplierId" :fallback-label="ingredient?.supplier?.name" />
       </div>
 
       <div>
@@ -63,6 +63,7 @@
 import { computed, reactive, watch } from 'vue'
 import { INGREDIENT_CATEGORIES, type Ingredient, type IngredientType } from '@/types/models'
 import Modal from '@/components/common/Modal.vue'
+import SupplierSelect from '@/components/suppliers/SupplierSelect.vue'
 
 const props = defineProps<{
   isOpen: boolean
@@ -79,7 +80,7 @@ const emit = defineEmits<{
     unit: string
     pricePerUnit: number
     category?: string
-    supplier?: string
+    supplierId?: string
     notes?: string
     type: IngredientType
     isActive: boolean
@@ -91,7 +92,7 @@ const formData = reactive({
   unit: '',
   pricePerUnit: 0,
   category: '',
-  supplier: '',
+  supplierId: '',
   notes: '',
   type: props.type,
   isActive: true,
@@ -121,7 +122,7 @@ watch(
       formData.unit = props.ingredient.unit
       formData.pricePerUnit = props.ingredient.pricePerUnit
       formData.category = props.ingredient.category || props.defaultCategory || ''
-      formData.supplier = props.ingredient.supplier || ''
+      formData.supplierId = props.ingredient.supplierId || ''
       formData.notes = props.ingredient.notes || ''
       formData.isActive = props.ingredient.isActive
     } else {
@@ -129,7 +130,7 @@ watch(
       formData.unit = ''
       formData.pricePerUnit = 0
       formData.category = props.type === 'ingredient' ? (props.defaultCategory || INGREDIENT_CATEGORIES[0]) : ''
-      formData.supplier = ''
+      formData.supplierId = ''
       formData.notes = ''
       formData.isActive = true
     }
@@ -143,7 +144,7 @@ const handleSubmit = () => {
     unit: formData.unit,
     pricePerUnit: formData.pricePerUnit,
     category: formData.category || undefined,
-    supplier: formData.supplier || undefined,
+    supplierId: formData.supplierId,
     notes: formData.notes || undefined,
     type: props.type,
     isActive: true,

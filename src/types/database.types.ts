@@ -78,6 +78,36 @@ export interface Database {
         }
         Relationships: []
       }
+      suppliers: {
+        Row: {
+          id: string
+          user_id: string
+          name: string
+          notes: string | null
+          is_active: boolean
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          name: string
+          notes?: string | null
+          is_active?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          name?: string
+          notes?: string | null
+          is_active?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       ingredients: {
         Row: {
           id: string
@@ -87,7 +117,7 @@ export interface Database {
           price_per_unit: number
           type: 'ingredient' | 'packaging'
           category: string | null
-          supplier: string | null
+          supplier_id: string | null
           notes: string | null
           is_active: boolean
           created_at: string
@@ -101,7 +131,7 @@ export interface Database {
           price_per_unit: number
           type: 'ingredient' | 'packaging'
           category?: string | null
-          supplier?: string | null
+          supplier_id?: string | null
           notes?: string | null
           is_active?: boolean
           created_at?: string
@@ -115,7 +145,7 @@ export interface Database {
           price_per_unit?: number
           type?: 'ingredient' | 'packaging'
           category?: string | null
-          supplier?: string | null
+          supplier_id?: string | null
           notes?: string | null
           is_active?: boolean
           created_at?: string
@@ -428,6 +458,7 @@ export interface Database {
           fee_amount: number | null
           adjustment_amount: number | null
           ingredient_id: string | null
+          supplier_id: string | null
           quantity: number | null
           unit: string | null
           is_asset: boolean
@@ -451,6 +482,7 @@ export interface Database {
           fee_amount?: number | null
           adjustment_amount?: number | null
           ingredient_id?: string | null
+          supplier_id?: string | null
           quantity?: number | null
           unit?: string | null
           is_asset?: boolean
@@ -474,6 +506,7 @@ export interface Database {
           fee_amount?: number | null
           adjustment_amount?: number | null
           ingredient_id?: string | null
+          supplier_id?: string | null
           quantity?: number | null
           unit?: string | null
           is_asset?: boolean

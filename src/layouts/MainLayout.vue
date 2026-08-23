@@ -110,6 +110,7 @@ const navItems = [
   { label: 'ชุดโปร', to: '/combos' },
   { label: 'วัตถุดิบ', to: '/ingredients' },
   { label: 'บรรจุภัณฑ์', to: '/packaging' },
+  { label: 'ซัพพลายเออร์', to: '/suppliers' },
   { label: 'วางแผนซื้อ', to: '/planning' },
   { label: 'บันทึกยอดขาย', to: '/sales' },
   { label: 'รายรับ-จ่าย', to: '/cashbook' },
