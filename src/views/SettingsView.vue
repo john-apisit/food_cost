@@ -133,9 +133,13 @@
               placeholder="วางลิงก์ Google Maps หรือพิกัด เช่น 13.75,100.50"
             />
             <p class="text-xs text-gray-500 mt-1">
-              วางลิงก์จากปุ่มแชร์ใน Google Maps — แผนที่จะอัปเดตทันทีเมื่อวางลิงก์
+              วางลิงก์จากปุ่มแชร์ใน Google Maps รวมถึงลิงก์สั้น maps.app.goo.gl
             </p>
-            <div v-if="mapEmbedUrl" class="mt-3 overflow-hidden rounded-lg border border-gray-100">
+            <div v-if="mapEmbedLoading" class="mt-3 flex h-64 items-center justify-center rounded-lg border border-gray-100 bg-gray-50 text-sm text-gray-500">
+              กำลังแปลงลิงก์แผนที่...
+            </div>
+            <p v-else-if="mapEmbedError" class="mt-3 text-sm text-red-600">{{ mapEmbedError }}</p>
+            <div v-else-if="mapEmbedUrl" class="mt-3 overflow-hidden rounded-lg border border-gray-100">
               <iframe
                 :key="mapEmbedUrl"
                 :src="mapEmbedUrl"
@@ -189,14 +193,18 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, reactive, watch } from 'vue'
+import { onMounted, reactive, ref, watch } from 'vue'
 import { Moon, Sun } from 'lucide-vue-next'
 import MainLayout from '@/layouts/MainLayout.vue'
 import { useStoreSettings } from '@/composables/useStoreSettings'
 import { useTheme, type Theme } from '@/composables/useTheme'
 import { useToast } from '@/composables/useToast'
 import { WEEKDAY_LABELS, WEEKDAYS, type Weekday } from '@/types/models'
-import { googleMapsEmbedUrl } from '@/utils/googleMaps'
+import {
+  expandGoogleMapsShortUrl,
+  googleMapsEmbedUrl,
+  isShortGoogleMapsUrl,
+} from '@/utils/googleMaps'
 
 const { settings, loading, fetchSettings, updateSettings } = useStoreSettings()
 const { theme, setTheme } = useTheme()
@@ -226,7 +234,47 @@ const form = reactive({
   targetMarginPercent: undefined as number | undefined,
 })
 
-const mapEmbedUrl = computed(() => googleMapsEmbedUrl(form.googleMapUrl))
+const mapEmbedUrl = ref<string | null>(null)
+const mapEmbedLoading = ref(false)
+const mapEmbedError = ref('')
+
+watch(() => form.googleMapUrl, async (value, _previous, onCleanup) => {
+  let cancelled = false
+  onCleanup(() => {
+    cancelled = true
+  })
+
+  mapEmbedError.value = ''
+  const immediate = googleMapsEmbedUrl(value)
+  if (immediate) {
+    mapEmbedUrl.value = immediate
+    mapEmbedLoading.value = false
+    return
+  }
+
+  if (!isShortGoogleMapsUrl(value)) {
+    mapEmbedUrl.value = null
+    mapEmbedLoading.value = false
+    return
+  }
+
+  mapEmbedLoading.value = true
+  mapEmbedUrl.value = null
+  try {
+    const resolved = await expandGoogleMapsShortUrl(value)
+    if (cancelled) return
+    const embed = googleMapsEmbedUrl(resolved)
+    mapEmbedUrl.value = embed
+    if (!embed) {
+      mapEmbedError.value = 'ไม่สามารถแสดงแผนที่จากลิงก์นี้ได้ กรุณาวางลิงก์แบบเต็มจากแถบที่อยู่ของ Google Maps'
+    }
+  } catch {
+    if (cancelled) return
+    mapEmbedError.value = 'ไม่สามารถแปลงลิงก์สั้นของ Google Maps ได้ กรุณาเปิดลิงก์แล้วคัดลอก URL จากแถบที่อยู่'
+  } finally {
+    if (!cancelled) mapEmbedLoading.value = false
+  }
+}, { immediate: true })
 
 watch(settings, (value) => {
   if (!value) return
