@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { CashEntry } from '@/types/models'
 import {
+  defaultCounterpartyFromSupplier,
   defaultIsAsset,
   defaultPaymentMethod,
   estimatePlatformPayout,
@@ -94,6 +95,13 @@ describe('defaults', () => {
     expect(defaultPaymentMethod('platform_payout')).toBe('bank_transfer')
     expect(defaultIsAsset('equipment')).toBe(true)
     expect(defaultIsAsset('utility')).toBe(false)
+  })
+
+  it('defaults the shop name from the selected item supplier', () => {
+    expect(defaultCounterpartyFromSupplier('', 'แม็คโคร')).toBe('แม็คโคร')
+    expect(defaultCounterpartyFromSupplier('ตลาดนัด', '  แม็คโคร  ')).toBe('แม็คโคร')
+    expect(defaultCounterpartyFromSupplier('ตลาดนัด', '   ')).toBe('ตลาดนัด')
+    expect(defaultCounterpartyFromSupplier('ตลาดนัด', undefined)).toBe('ตลาดนัด')
   })
 })
 

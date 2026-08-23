@@ -179,6 +179,7 @@ import { useCashEntries } from '@/composables/useCashEntries'
 import {
   categoriesForType,
   defaultCategoryForType,
+  defaultCounterpartyFromSupplier,
   defaultIsAsset,
   defaultPaymentMethod,
   estimatePlatformPayout,
@@ -393,7 +394,9 @@ const onCategoryChange = () => {
 }
 
 const onIngredientChange = () => {
-  if (selectedItem.value) form.unit = selectedItem.value.unit
+  if (!selectedItem.value) return
+  form.unit = selectedItem.value.unit
+  form.counterparty = defaultCounterpartyFromSupplier(form.counterparty, selectedItem.value.supplier)
 }
 
 watch(

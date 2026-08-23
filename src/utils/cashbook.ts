@@ -40,6 +40,14 @@ export function defaultIsAsset(category: CashCategory): boolean {
   return category === 'equipment'
 }
 
+export function defaultCounterpartyFromSupplier(
+  current: string,
+  supplier?: string | null,
+): string {
+  const next = supplier?.trim()
+  return next || current
+}
+
 export function cashEntryTitle(entry: Pick<CashEntry, 'category' | 'counterparty' | 'ingredient' | 'note'>): string {
   if (entry.ingredient?.name) return entry.ingredient.name
   if (entry.counterparty?.trim()) return entry.counterparty.trim()

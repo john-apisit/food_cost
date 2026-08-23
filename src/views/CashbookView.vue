@@ -68,25 +68,33 @@
       </div>
 
       <div class="card">
-        <div class="flex flex-col gap-3 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
-          <div class="flex gap-1 overflow-x-auto">
-            <button
-              v-for="tab in typeTabs"
-              :key="tab.value"
-              type="button"
-              class="whitespace-nowrap rounded-lg px-3 py-1.5 text-sm font-medium"
-              :class="typeFilter === tab.value ? 'bg-primary-50 text-primary-700' : 'text-gray-600 hover:bg-gray-50'"
-              @click="typeFilter = tab.value"
-            >
-              {{ tab.label }}
-            </button>
+        <div class="flex flex-col gap-3 px-4 py-3">
+          <div class="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+            <div class="flex gap-1 overflow-x-auto">
+              <button
+                v-for="tab in typeTabs"
+                :key="tab.value"
+                type="button"
+                class="whitespace-nowrap rounded-lg px-3 py-1.5 text-sm font-medium"
+                :class="typeFilter === tab.value ? 'bg-primary-50 text-primary-700' : 'text-gray-600 hover:bg-gray-50'"
+                @click="typeFilter = tab.value"
+              >
+                {{ tab.label }}
+              </button>
+            </div>
+            <div class="flex flex-col gap-2 sm:flex-row sm:items-end">
+              <div class="sm:w-56">
+                <label class="mb-1 block text-xs font-medium text-gray-500">วันที่</label>
+                <DatePicker v-model="selectedDate" />
+              </div>
+              <input
+                v-model="search"
+                type="search"
+                placeholder="ค้นหาชื่อร้าน หรือหมายเหตุ"
+                class="input-field w-full sm:w-56"
+              />
+            </div>
           </div>
-          <input
-            v-model="search"
-            type="search"
-            placeholder="ค้นหาชื่อร้าน หรือหมายเหตุ"
-            class="input-field w-full sm:w-64"
-          />
         </div>
 
         <div v-if="loading && !filteredEntries.length" class="px-4 py-10 text-center text-sm text-gray-500">
@@ -177,6 +185,7 @@
 import { computed, onMounted, ref, watch } from 'vue'
 import MainLayout from '@/layouts/MainLayout.vue'
 import EmptyState from '@/components/common/EmptyState.vue'
+import DatePicker from '@/components/common/DatePicker.vue'
 import CashEntryFormModal from '@/components/cashbook/CashEntryFormModal.vue'
 import { useCashEntries } from '@/composables/useCashEntries'
 import { useIngredients } from '@/composables/useIngredients'
@@ -200,7 +209,6 @@ import {
   summarizeCashEntries,
 } from '@/utils/cashbook'
 import {
-  addMonthsToDate,
   formatCurrency,
   formatDateOnly,
   formatMonthYear,
@@ -216,7 +224,8 @@ const { plans, fetchPlans, updatePurchasedIngredientIds } = usePurchasePlans()
 const { settings, fetchSettings } = useStoreSettings()
 const { success, error } = useToast()
 
-const monthCursor = ref(new Date())
+const selectedDate = ref(toDateInputValue())
+const monthCursor = ref(parseLocalDate(selectedDate.value) ?? new Date())
 const typeFilter = ref<CashEntryType | 'all'>('all')
 const search = ref('')
 const formOpen = ref(false)
@@ -246,6 +255,7 @@ const filteredEntries = computed(() => {
       planName: entry.planName ?? plans.value.find((item) => item.id === entry.planId)?.name,
     }))
     .filter((entry) => {
+      if (entry.occurredAt !== selectedDate.value) return false
       if (typeFilter.value !== 'all' && entry.type !== typeFilter.value) return false
       if (!query) return true
       const haystack = [cashEntryTitle(entry), entry.note, entry.counterparty, entry.planName]
@@ -256,18 +266,25 @@ const filteredEntries = computed(() => {
     })
 })
 
-const emptyTitle = computed(() =>
-  search.value || typeFilter.value !== 'all' ? 'ไม่พบรายการตามที่กรอง' : 'ยังไม่มีรายรับ-รายจ่ายเดือนนี้',
-)
-const emptyDescription = computed(() =>
-  search.value || typeFilter.value !== 'all'
-    ? 'ลองเปลี่ยนตัวกรองหรือคำค้น'
-    : 'เริ่มจากเงินที่แพลตฟอร์มโอนเข้าบัญชี',
-)
+const viewingToday = computed(() => selectedDate.value === toDateInputValue())
+
+const emptyTitle = computed(() => {
+  if (search.value || typeFilter.value !== 'all') return 'ไม่พบรายการตามที่กรอง'
+  return viewingToday.value ? 'ยังไม่มีรายรับ-รายจ่ายวันนี้' : 'ยังไม่มีรายการในวันที่เลือก'
+})
+const emptyDescription = computed(() => {
+  if (search.value || typeFilter.value !== 'all') return 'ลองเปลี่ยนตัวกรองหรือคำค้น'
+  return viewingToday.value
+    ? 'เริ่มจากเงินที่แพลตฟอร์มโอนเข้าบัญชี หรือเลือกวันอื่นเพื่อดูย้อนหลัง'
+    : 'ลองเลือกวันอื่น หรือบันทึกรายการใหม่ในวันนี้'
+})
 
 const shiftMonth = (amount: number) => {
-  const current = parseLocalDate(toDateInputValue(monthCursor.value)) ?? new Date()
-  monthCursor.value = addMonthsToDate(current, amount)
+  const current = parseLocalDate(selectedDate.value) ?? new Date()
+  const next = new Date(current.getFullYear(), current.getMonth() + amount, 1)
+  const lastDay = new Date(next.getFullYear(), next.getMonth() + 1, 0).getDate()
+  next.setDate(Math.min(current.getDate(), lastDay))
+  selectedDate.value = toDateInputValue(next)
 }
 
 const quickActionLabel = (action: (typeof CASH_QUICK_ACTIONS)[number]) =>
@@ -354,6 +371,7 @@ const save = async (payload: CashEntryPayload, options: { updateIngredientPrice:
     success('บันทึกรายการแล้ว')
     formOpen.value = false
     editing.value = null
+    if (payload.occurredAt) selectedDate.value = payload.occurredAt
     await reloadMonth()
   } catch (e: unknown) {
     error(e instanceof Error ? e.message : 'บันทึกไม่สำเร็จ')
@@ -371,6 +389,13 @@ const remove = async (row: CashEntry) => {
     error(e instanceof Error ? e.message : 'ลบไม่สำเร็จ')
   }
 }
+
+watch(selectedDate, (date) => {
+  const range = monthDateRange(monthCursor.value)
+  if (date >= range.from && date <= range.to) return
+  const parsed = parseLocalDate(date)
+  if (parsed) monthCursor.value = parsed
+})
 
 watch(monthRange, (range) => {
   fetchEntries(range)
