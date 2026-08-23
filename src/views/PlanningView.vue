@@ -126,9 +126,10 @@
       <div v-if="purchaseItems.length" class="space-y-4">
         <div class="flex flex-col sm:flex-row sm:justify-between sm:items-end gap-3">
           <div>
-            <h2 class="text-lg font-semibold">รายการซื้อตามประเภทวัตถุดิบ</h2>
+            <h2 class="text-lg font-semibold">รายการซื้อตามซัพพลายเออร์</h2>
             <p v-if="periodNote" class="text-sm text-gray-600 mt-1">{{ periodNote }}</p>
             <p class="text-sm text-gray-500 mt-1">
+              <template v-if="namedSupplierCount">ต้องไปซื้อ {{ namedSupplierCount }} ร้าน · </template>
               วัตถุดิบ {{ ingredientCount }} รายการ · บรรจุภัณฑ์ {{ packagingCount }} รายการ
             </p>
           </div>
@@ -144,8 +145,8 @@
         </div>
 
         <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
-          <div v-for="group in categoryGroups" :key="group.category" class="card p-4">
-            <p class="text-sm font-medium text-gray-700">{{ group.category }}</p>
+          <div v-for="group in supplierGroups" :key="group.supplier" class="card p-4">
+            <p class="text-sm font-medium text-gray-700">{{ group.supplier }}</p>
             <p class="text-xl font-bold mt-1">{{ formatCurrency(group.totalCost) }}</p>
             <p class="text-xs text-gray-500 mt-1">{{ group.items.length }} รายการ</p>
           </div>
@@ -160,6 +161,7 @@
                     <span class="sr-only">ซื้อแล้ว</span>
                   </th>
                   <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">รายการ</th>
+                  <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">ประเภท</th>
                   <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">ปริมาณรวม</th>
                   <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">หน่วย</th>
                   <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">ราคา/หน่วย</th>
@@ -167,10 +169,10 @@
                 </tr>
               </thead>
               <tbody>
-                <template v-for="group in categoryGroups" :key="group.category">
+                <template v-for="group in supplierGroups" :key="group.supplier">
                   <tr class="bg-primary-50">
-                    <td colspan="5" class="px-4 py-2.5 font-semibold text-gray-900">
-                      {{ group.category }}
+                    <td colspan="6" class="px-4 py-2.5 font-semibold text-gray-900">
+                      {{ group.supplier }}
                       <span class="ml-2 text-xs font-normal text-gray-500">{{ group.items.length }} รายการ</span>
                     </td>
                     <td class="px-4 py-2.5 text-right font-semibold">{{ formatCurrency(group.totalCost) }}</td>
@@ -206,6 +208,14 @@
                         </button>
                       </div>
                     </td>
+                    <td class="px-4 py-3">
+                      <span
+                        class="px-2 py-1 text-xs rounded-full"
+                        :class="item.ingredient.type === 'packaging' ? 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800'"
+                      >
+                        {{ purchaseCategoryLabel(item) }}
+                      </span>
+                    </td>
                     <td class="px-4 py-3 text-right font-medium">{{ formatNumber(item.totalQuantity) }}</td>
                     <td class="px-4 py-3">{{ item.ingredient.unit }}</td>
                     <td class="px-4 py-3 text-right">{{ formatCurrency(item.ingredient.pricePerUnit) }}</td>
@@ -215,7 +225,7 @@
               </tbody>
               <tfoot class="bg-gray-50 border-t">
                 <tr>
-                  <td colspan="5" class="px-4 py-4 text-right font-bold">รวมงบซื้อทั้งหมด</td>
+                  <td colspan="6" class="px-4 py-4 text-right font-bold">รวมงบซื้อทั้งหมด</td>
                   <td class="px-4 py-4 text-right font-bold text-lg text-primary-600">{{ formatCurrency(totalCost) }}</td>
                 </tr>
               </tfoot>
@@ -271,10 +281,11 @@ import Modal from '@/components/common/Modal.vue'
 import { useMenu } from '@/composables/useMenu'
 import { useIngredients } from '@/composables/useIngredients'
 import {
-  groupPurchaseItemsByCategory,
+  groupPurchaseItemsBySupplier,
   purchaseCategoryLabel,
   purchaseItemsForMenu,
   uniquePrepSteps,
+  UNSPECIFIED_SUPPLIER,
   usePurchasePlanning,
 } from '@/composables/usePurchasePlanning'
 import { usePurchasePlans } from '@/composables/usePurchasePlans'
@@ -328,7 +339,10 @@ const planDatesLabel = (plan: PurchasePlan) => {
   return parts.join(' · ')
 }
 const totalCost = computed(() => purchaseItems.value.reduce((sum, item) => sum + item.totalCost, 0))
-const categoryGroups = computed(() => groupPurchaseItemsByCategory(purchaseItems.value))
+const supplierGroups = computed(() => groupPurchaseItemsBySupplier(purchaseItems.value))
+const namedSupplierCount = computed(
+  () => supplierGroups.value.filter((group) => group.supplier !== UNSPECIFIED_SUPPLIER).length,
+)
 const menuBrandItems = computed(() =>
   selectedMenuName.value ? purchaseItemsForMenu(purchaseItems.value, selectedMenuName.value) : [],
 )

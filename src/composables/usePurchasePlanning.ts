@@ -46,6 +46,21 @@ export function supplierLabel(supplier?: string | null): string {
   return trimmed || UNSPECIFIED_SUPPLIER
 }
 
+export function purchaseCategoryLabel(item: PurchaseItem): string {
+  if (item.ingredient.type === 'packaging') return PACKAGING_CATEGORY
+  return isOtherIngredientCategory(item.ingredient.category) ? 'อื่นๆ' : item.ingredient.category!
+}
+
+export function comparePurchaseItemsByCategory(a: PurchaseItem, b: PurchaseItem): number {
+  const labelA = purchaseCategoryLabel(a)
+  const labelB = purchaseCategoryLabel(b)
+  const orderA = PURCHASE_CATEGORY_ORDER.indexOf(labelA)
+  const orderB = PURCHASE_CATEGORY_ORDER.indexOf(labelB)
+  const byCategory = (orderA === -1 ? 99 : orderA) - (orderB === -1 ? 99 : orderB)
+  if (byCategory !== 0) return byCategory
+  return a.ingredient.name.localeCompare(b.ingredient.name, 'th')
+}
+
 export function groupPurchaseItemsBySupplier(items: PurchaseItem[]): PurchaseSupplierGroup[] {
   const map = new Map<string, PurchaseItem[]>()
 
@@ -57,21 +72,19 @@ export function groupPurchaseItemsBySupplier(items: PurchaseItem[]): PurchaseSup
   }
 
   return Array.from(map.entries())
-    .map(([supplier, groupItems]) => ({
-      supplier,
-      items: groupItems,
-      totalCost: groupItems.reduce((sum, item) => sum + item.totalCost, 0),
-    }))
+    .map(([supplier, groupItems]) => {
+      const itemsByCategory = [...groupItems].sort(comparePurchaseItemsByCategory)
+      return {
+        supplier,
+        items: itemsByCategory,
+        totalCost: itemsByCategory.reduce((sum, item) => sum + item.totalCost, 0),
+      }
+    })
     .sort((a, b) => {
       if (a.supplier === UNSPECIFIED_SUPPLIER) return 1
       if (b.supplier === UNSPECIFIED_SUPPLIER) return -1
       return a.supplier.localeCompare(b.supplier, 'th')
     })
-}
-
-export function purchaseCategoryLabel(item: PurchaseItem): string {
-  if (item.ingredient.type === 'packaging') return PACKAGING_CATEGORY
-  return isOtherIngredientCategory(item.ingredient.category) ? 'อื่นๆ' : item.ingredient.category!
 }
 
 export function groupPurchaseItemsByCategory(items: PurchaseItem[]): PurchaseCategoryGroup[] {
@@ -109,16 +122,7 @@ export function purchaseItemsForMenu(items: PurchaseItem[], menuName: string) {
       const from = item.fromMenus.find((menu) => menu.menuName === menuName)
       return from ? [{ item, quantity: from.quantity }] : []
     })
-    .sort((a, b) => {
-      const catA = purchaseCategoryLabel(a.item)
-      const catB = purchaseCategoryLabel(b.item)
-      const orderA = PURCHASE_CATEGORY_ORDER.indexOf(catA)
-      const orderB = PURCHASE_CATEGORY_ORDER.indexOf(catB)
-      if (orderA !== orderB) {
-        return (orderA === -1 ? 99 : orderA) - (orderB === -1 ? 99 : orderB)
-      }
-      return a.item.ingredient.name.localeCompare(b.item.ingredient.name, 'th')
-    })
+    .sort((a, b) => comparePurchaseItemsByCategory(a.item, b.item))
 }
 
 export function usePurchasePlanning() {

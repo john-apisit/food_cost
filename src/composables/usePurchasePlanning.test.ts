@@ -71,13 +71,13 @@ describe('purchase planning', () => {
 
   it('groups purchase items by supplier and puts unspecified last', () => {
     const makroPork: PurchaseItem = {
-      ingredient: { ...pork, supplier: 'Makro' },
+      ingredient: { ...pork, supplier: 'Makro', category: 'เนื้อสัตว์' },
       totalQuantity: 2,
       totalCost: 300,
       fromMenus: [],
     }
     const marketVeg: PurchaseItem = {
-      ingredient: { ...pork, id: 'i2', name: 'กะหล่ำ', supplier: 'ตลาดสด' },
+      ingredient: { ...pork, id: 'i2', name: 'กะหล่ำ', supplier: 'ตลาดสด', category: 'ผัก' },
       totalQuantity: 1,
       totalCost: 40,
       fromMenus: [],
@@ -89,18 +89,42 @@ describe('purchase planning', () => {
       fromMenus: [],
     }
     const makroRice: PurchaseItem = {
-      ingredient: { ...pork, id: 'i3', name: 'ข้าว', supplier: 'Makro' },
+      ingredient: { ...pork, id: 'i3', name: 'ข้าว', supplier: 'Makro', category: 'ของแห้ง' },
       totalQuantity: 5,
       totalCost: 200,
       fromMenus: [],
     }
+    const makroBox: PurchaseItem = {
+      ingredient: { ...box, id: 'p2', supplier: 'Makro' },
+      totalQuantity: 8,
+      totalCost: 32,
+      fromMenus: [],
+    }
+    const makroVeg: PurchaseItem = {
+      ingredient: { ...pork, id: 'i4', name: 'ต้นหอม', supplier: 'Makro', category: 'ผัก' },
+      totalQuantity: 1,
+      totalCost: 20,
+      fromMenus: [],
+    }
 
-    const groups = groupPurchaseItemsBySupplier([makroPork, marketVeg, unnamedBox, makroRice])
+    const groups = groupPurchaseItemsBySupplier([
+      makroBox,
+      makroRice,
+      marketVeg,
+      unnamedBox,
+      makroVeg,
+      makroPork,
+    ])
     const byName = Object.fromEntries(groups.map((g) => [g.supplier, g]))
 
     expect(groups.map((g) => g.supplier)).toEqual(['ตลาดสด', 'Makro', UNSPECIFIED_SUPPLIER])
-    expect(byName.Makro.items).toHaveLength(2)
-    expect(byName.Makro.totalCost).toBe(500)
+    expect(byName.Makro.items.map((item) => item.ingredient.name)).toEqual([
+      'หมูสับ',
+      'ต้นหอม',
+      'ข้าว',
+      'กล่องข้าว',
+    ])
+    expect(byName.Makro.totalCost).toBe(552)
     expect(byName['ตลาดสด'].totalCost).toBe(40)
     expect(byName[UNSPECIFIED_SUPPLIER].totalCost).toBe(40)
     expect(groups.at(-1)?.supplier).toBe(UNSPECIFIED_SUPPLIER)
