@@ -1,7 +1,18 @@
-import type { Ingredient, MenuItem, PurchaseItem, PurchaseSupplierGroup } from '@/types/models'
+import {
+  INGREDIENT_CATEGORIES,
+  isOtherIngredientCategory,
+  type Ingredient,
+  type MenuItem,
+  type PurchaseCategoryGroup,
+  type PurchaseItem,
+  type PurchaseSupplierGroup,
+} from '@/types/models'
 import { getPackagingPresetLines } from '@/utils/packagingPresets'
 
 export const UNSPECIFIED_SUPPLIER = 'ไม่ระบุซัพพลายเออร์'
+export const PACKAGING_CATEGORY = 'บรรจุภัณฑ์'
+
+const PURCHASE_CATEGORY_ORDER = [...INGREDIENT_CATEGORIES, PACKAGING_CATEGORY]
 
 export interface PrepStepItem {
   step: string
@@ -55,6 +66,58 @@ export function groupPurchaseItemsBySupplier(items: PurchaseItem[]): PurchaseSup
       if (a.supplier === UNSPECIFIED_SUPPLIER) return 1
       if (b.supplier === UNSPECIFIED_SUPPLIER) return -1
       return a.supplier.localeCompare(b.supplier, 'th')
+    })
+}
+
+export function purchaseCategoryLabel(item: PurchaseItem): string {
+  if (item.ingredient.type === 'packaging') return PACKAGING_CATEGORY
+  return isOtherIngredientCategory(item.ingredient.category) ? 'อื่นๆ' : item.ingredient.category!
+}
+
+export function groupPurchaseItemsByCategory(items: PurchaseItem[]): PurchaseCategoryGroup[] {
+  const map = new Map<string, PurchaseItem[]>()
+
+  for (const item of items) {
+    const key = purchaseCategoryLabel(item)
+    const list = map.get(key)
+    if (list) list.push(item)
+    else map.set(key, [item])
+  }
+
+  const known = new Set<string>(PURCHASE_CATEGORY_ORDER)
+  const extras = Array.from(map.keys())
+    .filter((key) => !known.has(key))
+    .sort((a, b) => a.localeCompare(b, 'th'))
+
+  return [...PURCHASE_CATEGORY_ORDER, ...extras]
+    .filter((category) => map.has(category))
+    .map((category) => {
+      const groupItems = [...map.get(category)!].sort((a, b) =>
+        a.ingredient.name.localeCompare(b.ingredient.name, 'th'),
+      )
+      return {
+        category,
+        items: groupItems,
+        totalCost: groupItems.reduce((sum, item) => sum + item.totalCost, 0),
+      }
+    })
+}
+
+export function purchaseItemsForMenu(items: PurchaseItem[], menuName: string) {
+  return items
+    .flatMap((item) => {
+      const from = item.fromMenus.find((menu) => menu.menuName === menuName)
+      return from ? [{ item, quantity: from.quantity }] : []
+    })
+    .sort((a, b) => {
+      const catA = purchaseCategoryLabel(a.item)
+      const catB = purchaseCategoryLabel(b.item)
+      const orderA = PURCHASE_CATEGORY_ORDER.indexOf(catA)
+      const orderB = PURCHASE_CATEGORY_ORDER.indexOf(catB)
+      if (orderA !== orderB) {
+        return (orderA === -1 ? 99 : orderA) - (orderB === -1 ? 99 : orderB)
+      }
+      return a.item.ingredient.name.localeCompare(b.item.ingredient.name, 'th')
     })
 }
 

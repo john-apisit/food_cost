@@ -237,6 +237,12 @@ export interface PurchaseSupplierGroup {
   totalCost: number
 }
 
+export interface PurchaseCategoryGroup {
+  category: string
+  items: PurchaseItem[]
+  totalCost: number
+}
+
 export interface SalesRecord {
   id: string
   userId: string

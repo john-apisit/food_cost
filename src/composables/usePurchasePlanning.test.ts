@@ -1,7 +1,10 @@
 import { describe, expect, it } from 'vitest'
 import {
+  PACKAGING_CATEGORY,
   UNSPECIFIED_SUPPLIER,
+  groupPurchaseItemsByCategory,
   groupPurchaseItemsBySupplier,
+  purchaseItemsForMenu,
   uniquePrepSteps,
   usePurchasePlanning,
 } from '@/composables/usePurchasePlanning'
@@ -101,6 +104,64 @@ describe('purchase planning', () => {
     expect(byName['ตลาดสด'].totalCost).toBe(40)
     expect(byName[UNSPECIFIED_SUPPLIER].totalCost).toBe(40)
     expect(groups.at(-1)?.supplier).toBe(UNSPECIFIED_SUPPLIER)
+  })
+
+  it('groups purchase items by ingredient category and puts packaging last', () => {
+    const meat: PurchaseItem = {
+      ingredient: { ...pork, category: 'เนื้อสัตว์' },
+      totalQuantity: 2,
+      totalCost: 300,
+      fromMenus: [],
+    }
+    const veg: PurchaseItem = {
+      ingredient: { ...pork, id: 'i2', name: 'กะหล่ำ', category: 'ผัก' },
+      totalQuantity: 1,
+      totalCost: 40,
+      fromMenus: [],
+    }
+    const other: PurchaseItem = {
+      ingredient: { ...pork, id: 'i3', name: 'ข้าว', category: 'ของแห้ง' },
+      totalQuantity: 5,
+      totalCost: 200,
+      fromMenus: [],
+    }
+    const pkg: PurchaseItem = {
+      ingredient: { ...box, category: 'กล่อง' },
+      totalQuantity: 10,
+      totalCost: 40,
+      fromMenus: [],
+    }
+
+    const groups = groupPurchaseItemsByCategory([pkg, other, veg, meat])
+
+    expect(groups.map((g) => g.category)).toEqual(['เนื้อสัตว์', 'ผัก', 'อื่นๆ', PACKAGING_CATEGORY])
+    expect(groups.at(-1)?.category).toBe(PACKAGING_CATEGORY)
+    expect(groups.find((g) => g.category === 'อื่นๆ')?.totalCost).toBe(200)
+  })
+
+  it('lists ingredients used by a menu with that menu quantity', () => {
+    const items: PurchaseItem[] = [
+      {
+        ingredient: { ...pork, category: 'เนื้อสัตว์' },
+        totalQuantity: 3,
+        totalCost: 450,
+        fromMenus: [
+          { menuName: 'กะเพราหมู', quantity: 2 },
+          { menuName: 'ข้าวผัดหมู', quantity: 1 },
+        ],
+      },
+      {
+        ingredient: { ...box },
+        totalQuantity: 10,
+        totalCost: 40,
+        fromMenus: [{ menuName: 'ข้าวผัดหมู', quantity: 10 }],
+      },
+    ]
+
+    const forFriedRice = purchaseItemsForMenu(items, 'ข้าวผัดหมู')
+    expect(forFriedRice.map((row) => row.item.ingredient.name)).toEqual(['หมูสับ', 'กล่องข้าว'])
+    expect(forFriedRice[0].quantity).toBe(1)
+    expect(purchaseItemsForMenu(items, 'ไข่เจียว')).toEqual([])
   })
 
   it('includes sale-unit packaging presets when recipe has none', () => {

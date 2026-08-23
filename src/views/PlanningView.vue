@@ -126,10 +126,9 @@
       <div v-if="purchaseItems.length" class="space-y-4">
         <div class="flex flex-col sm:flex-row sm:justify-between sm:items-end gap-3">
           <div>
-            <h2 class="text-lg font-semibold">รายการซื้อตามซัพพลายเออร์</h2>
+            <h2 class="text-lg font-semibold">รายการซื้อตามประเภทวัตถุดิบ</h2>
             <p v-if="periodNote" class="text-sm text-gray-600 mt-1">{{ periodNote }}</p>
             <p class="text-sm text-gray-500 mt-1">
-              <template v-if="namedSupplierCount">ต้องไปซื้อ {{ namedSupplierCount }} ร้าน · </template>
               วัตถุดิบ {{ ingredientCount }} รายการ · บรรจุภัณฑ์ {{ packagingCount }} รายการ
             </p>
           </div>
@@ -140,12 +139,13 @@
               class="rounded border-gray-300 text-primary-600 focus:ring-primary-500"
             />
             แสดงเมนู
+            <span class="text-xs text-gray-400 font-normal">จิ้มชื่อเพื่อดูยี่ห้อ</span>
           </label>
         </div>
 
         <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
-          <div v-for="group in supplierGroups" :key="group.supplier" class="card p-4">
-            <p class="text-sm font-medium text-gray-700">{{ group.supplier }}</p>
+          <div v-for="group in categoryGroups" :key="group.category" class="card p-4">
+            <p class="text-sm font-medium text-gray-700">{{ group.category }}</p>
             <p class="text-xl font-bold mt-1">{{ formatCurrency(group.totalCost) }}</p>
             <p class="text-xs text-gray-500 mt-1">{{ group.items.length }} รายการ</p>
           </div>
@@ -160,7 +160,6 @@
                     <span class="sr-only">ซื้อแล้ว</span>
                   </th>
                   <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">รายการ</th>
-                  <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">ประเภท</th>
                   <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">ปริมาณรวม</th>
                   <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">หน่วย</th>
                   <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">ราคา/หน่วย</th>
@@ -168,10 +167,10 @@
                 </tr>
               </thead>
               <tbody>
-                <template v-for="group in supplierGroups" :key="group.supplier">
+                <template v-for="group in categoryGroups" :key="group.category">
                   <tr class="bg-primary-50">
-                    <td colspan="6" class="px-4 py-2.5 font-semibold text-gray-900">
-                      {{ group.supplier }}
+                    <td colspan="5" class="px-4 py-2.5 font-semibold text-gray-900">
+                      {{ group.category }}
                       <span class="ml-2 text-xs font-normal text-gray-500">{{ group.items.length }} รายการ</span>
                     </td>
                     <td class="px-4 py-2.5 text-right font-semibold">{{ formatCurrency(group.totalCost) }}</td>
@@ -195,17 +194,17 @@
                       <div :class="isPurchased(item.ingredient.id) ? 'text-green-700 font-medium' : ''">
                         {{ item.ingredient.name }}
                       </div>
-                      <div v-if="showMenus" class="text-xs text-gray-500">
-                        {{ item.fromMenus.map((m) => `${m.menuName} (${formatNumber(m.quantity)})`).join(', ') }}
+                      <div v-if="showMenus" class="mt-1 flex flex-wrap gap-x-2 gap-y-1">
+                        <button
+                          v-for="menu in item.fromMenus"
+                          :key="menu.menuName"
+                          type="button"
+                          class="text-xs text-primary-600 hover:underline"
+                          @click="openMenuBrand(menu.menuName)"
+                        >
+                          {{ menu.menuName }} ({{ formatNumber(menu.quantity) }})
+                        </button>
                       </div>
-                    </td>
-                    <td class="px-4 py-3">
-                      <span
-                        class="px-2 py-1 text-xs rounded-full"
-                        :class="item.ingredient.type === 'ingredient' ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'"
-                      >
-                        {{ ingredientTypeLabel(item.ingredient.type) }}
-                      </span>
                     </td>
                     <td class="px-4 py-3 text-right font-medium">{{ formatNumber(item.totalQuantity) }}</td>
                     <td class="px-4 py-3">{{ item.ingredient.unit }}</td>
@@ -216,7 +215,7 @@
               </tbody>
               <tfoot class="bg-gray-50 border-t">
                 <tr>
-                  <td colspan="6" class="px-4 py-4 text-right font-bold">รวมงบซื้อทั้งหมด</td>
+                  <td colspan="5" class="px-4 py-4 text-right font-bold">รวมงบซื้อทั้งหมด</td>
                   <td class="px-4 py-4 text-right font-bold text-lg text-primary-600">{{ formatCurrency(totalCost) }}</td>
                 </tr>
               </tfoot>
@@ -231,6 +230,35 @@
         </div>
       </div>
     </div>
+
+    <Modal :is-open="Boolean(selectedMenuName)" :title="selectedMenuName || 'รายละเอียดยี่ห้อ'" wide @close="selectedMenuName = null">
+      <p class="text-sm text-gray-500 mb-4">ยี่ห้อและร้านของวัตถุดิบในเมนูนี้</p>
+      <div v-if="menuBrandItems.length" class="overflow-x-auto">
+        <table class="min-w-full text-sm">
+          <thead>
+            <tr class="text-left text-xs font-medium text-gray-500 uppercase">
+              <th class="pb-2 pr-3">รายการ</th>
+              <th class="pb-2 pr-3">ประเภท</th>
+              <th class="pb-2 pr-3">ยี่ห้อ / ร้าน</th>
+              <th class="pb-2 pr-3">หมายเหตุ</th>
+              <th class="pb-2 text-right">ปริมาณ</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="row in menuBrandItems" :key="row.item.ingredient.id" class="border-t border-gray-100">
+              <td class="py-2.5 pr-3 font-medium">{{ row.item.ingredient.name }}</td>
+              <td class="py-2.5 pr-3 text-gray-600">{{ purchaseCategoryLabel(row.item) }}</td>
+              <td class="py-2.5 pr-3">{{ row.item.ingredient.supplier || 'ไม่ระบุ' }}</td>
+              <td class="py-2.5 pr-3 text-gray-600 whitespace-pre-line">{{ row.item.ingredient.notes || '-' }}</td>
+              <td class="py-2.5 text-right whitespace-nowrap">
+                {{ formatNumber(row.quantity) }} {{ row.item.ingredient.unit }}
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p v-else class="text-sm text-gray-500">ไม่พบวัตถุดิบของเมนูนี้ในรายการซื้อ</p>
+    </Modal>
   </MainLayout>
 </template>
 
@@ -239,9 +267,16 @@ import { computed, onMounted, ref, watch } from 'vue'
 import { X } from 'lucide-vue-next'
 import MainLayout from '@/layouts/MainLayout.vue'
 import DatePicker from '@/components/common/DatePicker.vue'
+import Modal from '@/components/common/Modal.vue'
 import { useMenu } from '@/composables/useMenu'
 import { useIngredients } from '@/composables/useIngredients'
-import { groupPurchaseItemsBySupplier, uniquePrepSteps, UNSPECIFIED_SUPPLIER, usePurchasePlanning } from '@/composables/usePurchasePlanning'
+import {
+  groupPurchaseItemsByCategory,
+  purchaseCategoryLabel,
+  purchaseItemsForMenu,
+  uniquePrepSteps,
+  usePurchasePlanning,
+} from '@/composables/usePurchasePlanning'
 import { usePurchasePlans } from '@/composables/usePurchasePlans'
 import { useToast } from '@/composables/useToast'
 import {
@@ -250,7 +285,6 @@ import {
   formatNumber,
   formatSaleDateRange,
   inclusiveDayCount,
-  ingredientTypeLabel,
   saleUnitLabel,
 } from '@/utils/format'
 import type { PurchaseItem, PurchasePlan } from '@/types/models'
@@ -271,6 +305,7 @@ const purchaseItems = ref<PurchaseItem[]>([])
 const showMenus = ref(false)
 const purchasedIds = ref<Set<string>>(new Set())
 const currentPlanId = ref<string | null>(null)
+const selectedMenuName = ref<string | null>(null)
 
 const hasSaleRange = computed(() => Boolean(saleStartDate.value && saleEndDate.value))
 const canCalculate = computed(() => menuSelections.value.some((s) => s.menuItemId && s.quantity > 0))
@@ -293,9 +328,9 @@ const planDatesLabel = (plan: PurchasePlan) => {
   return parts.join(' · ')
 }
 const totalCost = computed(() => purchaseItems.value.reduce((sum, item) => sum + item.totalCost, 0))
-const supplierGroups = computed(() => groupPurchaseItemsBySupplier(purchaseItems.value))
-const namedSupplierCount = computed(
-  () => supplierGroups.value.filter((group) => group.supplier !== UNSPECIFIED_SUPPLIER).length,
+const categoryGroups = computed(() => groupPurchaseItemsByCategory(purchaseItems.value))
+const menuBrandItems = computed(() =>
+  selectedMenuName.value ? purchaseItemsForMenu(purchaseItems.value, selectedMenuName.value) : [],
 )
 const ingredientCount = computed(
   () => purchaseItems.value.filter((item) => item.ingredient.type === 'ingredient').length,
@@ -303,6 +338,10 @@ const ingredientCount = computed(
 const packagingCount = computed(
   () => purchaseItems.value.filter((item) => item.ingredient.type === 'packaging').length,
 )
+
+const openMenuBrand = (menuName: string) => {
+  selectedMenuName.value = menuName
+}
 
 const selectedLines = () =>
   menuSelections.value
@@ -318,22 +357,29 @@ const calculate = () => {
   purchaseItems.value = calculatePurchaseList(selectedLines(), days.value, ingredients.value, menuItems.value)
 }
 
+const planPayload = () => ({
+  name: planName.value || 'แผนซื้อของ',
+  days: days.value,
+  purchaseDate: purchaseDate.value || null,
+  saleStartDate: saleStartDate.value || null,
+  saleEndDate: saleEndDate.value || null,
+  lines: selectedLines().map((s) => ({
+    menuItemId: s.menuItem.id,
+    targetQuantity: s.quantity,
+  })),
+  purchasedIngredientIds: [...purchasedIds.value],
+})
+
+const persistPlan = async () => {
+  calculate()
+  const saved = await savePlan(planPayload())
+  if (saved) currentPlanId.value = saved.id
+  return saved
+}
+
 const save = async () => {
   try {
-    calculate()
-    const saved = await savePlan({
-      name: planName.value || 'แผนซื้อของ',
-      days: days.value,
-      purchaseDate: purchaseDate.value || null,
-      saleStartDate: saleStartDate.value || null,
-      saleEndDate: saleEndDate.value || null,
-      lines: selectedLines().map((s) => ({
-        menuItemId: s.menuItem.id,
-        targetQuantity: s.quantity,
-      })),
-      purchasedIngredientIds: [...purchasedIds.value],
-    })
-    if (saved) currentPlanId.value = saved.id
+    await persistPlan()
     success('บันทึกแผนแล้ว')
   } catch (e: unknown) {
     error(e instanceof Error ? e.message : 'บันทึกไม่สำเร็จ')
@@ -348,9 +394,12 @@ const togglePurchased = async (id: string) => {
   else next.add(id)
   purchasedIds.value = next
 
-  if (!currentPlanId.value) return
   try {
-    await updatePurchasedIngredientIds(currentPlanId.value, [...next])
+    if (currentPlanId.value) {
+      await updatePurchasedIngredientIds(currentPlanId.value, [...next])
+    } else if (canCalculate.value) {
+      await persistPlan()
+    }
   } catch (e: unknown) {
     error(e instanceof Error ? e.message : 'บันทึกสถานะไม่สำเร็จ')
   }
