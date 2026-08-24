@@ -79,6 +79,30 @@
 
       <DashboardSalesCharts />
 
+      <div v-if="todayRoutines.length" class="card p-5 space-y-3">
+        <div class="flex items-center justify-between gap-3">
+          <h2 class="text-lg font-bold">งานวันนี้</h2>
+          <router-link to="/routines" class="text-sm font-medium text-primary-600">ดูทั้งหมด</router-link>
+        </div>
+        <ul class="space-y-2">
+          <li v-for="card in todayRoutines" :key="card.routine.id">
+            <router-link
+              :to="`/routines/${card.routine.id}`"
+              class="flex items-center justify-between gap-3 rounded-lg px-3 py-2 hover:bg-gray-50"
+            >
+              <span>
+                <span class="block font-medium text-gray-900">{{ card.routine.name }}</span>
+                <span class="text-xs text-gray-500">
+                  {{ formatTimeRange(card.routine.startTime, card.routine.endTime) }} ·
+                  {{ card.progress.done }}/{{ card.progress.total }}
+                </span>
+              </span>
+              <span class="text-xs font-medium text-gray-500">{{ ROUTINE_WINDOW_STATUS_LABELS[card.window] }}</span>
+            </router-link>
+          </li>
+        </ul>
+      </div>
+
       <div v-if="notifications.length" class="card p-5 space-y-3">
         <h2 class="text-lg font-bold">ต้องดู</h2>
         <ul class="space-y-2">
@@ -99,12 +123,13 @@
 
       <div class="card p-5">
         <h2 class="text-lg font-bold mb-4">ทางลัด</h2>
-        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-7 gap-3">
+        <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-3">
           <router-link to="/ingredients" class="btn-secondary text-center">เพิ่มวัตถุดิบ</router-link>
           <router-link to="/menu/new" class="btn-secondary text-center">เพิ่มเมนู</router-link>
           <router-link to="/combos" class="btn-secondary text-center">สร้างชุดโปร</router-link>
           <router-link to="/comparison" class="btn-secondary text-center">เปรียบเทียบเมนู</router-link>
           <router-link to="/planning" class="btn-secondary text-center">วางแผนซื้อ</router-link>
+          <router-link to="/routines" class="btn-secondary text-center">งานประจำวัน</router-link>
           <router-link to="/cashbook" class="btn-secondary text-center">รายรับ-รายจ่าย</router-link>
           <router-link to="/revenue" class="btn-secondary text-center">ประมาณการรายได้</router-link>
         </div>
@@ -131,7 +156,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { Store } from 'lucide-vue-next'
 import MainLayout from '@/layouts/MainLayout.vue'
@@ -140,7 +165,17 @@ import MenuComparisonTable from '@/components/comparison/MenuComparisonTable.vue
 import ComboComparisonTable from '@/components/comparison/ComboComparisonTable.vue'
 import { useCostBreakdown } from '@/composables/useCostBreakdown'
 import { useNotifications } from '@/composables/useNotifications'
-import type { MenuItem } from '@/types/models'
+import { useRoutines } from '@/composables/useRoutines'
+import { ROUTINE_WINDOW_STATUS_LABELS, type MenuItem } from '@/types/models'
+import { toDateInputValue } from '@/utils/format'
+import {
+  currentTimeHm,
+  formatTimeRange,
+  isRoutineScheduledOn,
+  routineWindowStatus,
+  runProgress,
+  weekdayFromDate,
+} from '@/utils/routines'
 
 const router = useRouter()
 const { breakdowns, comboBreakdowns, loading, loadAll, menuItems, ingredients, settings, combos } = useCostBreakdown()
@@ -150,6 +185,24 @@ const { notifications } = useNotifications(
   () => settings.value,
   () => comboBreakdowns.value,
 )
+const { routines, runs, fetchRoutines, fetchRuns, ensureRunsForDate } = useRoutines()
+const today = toDateInputValue()
+const nowHm = ref(currentTimeHm())
+let routineTimer: number | undefined
+
+const todayRoutines = computed(() => {
+  const weekday = weekdayFromDate(today)
+  return routines.value
+    .filter((routine) => isRoutineScheduledOn(routine, weekday))
+    .map((routine) => {
+      const run = runs.value.find((row) => row.routineId === routine.id)
+      return {
+        routine,
+        window: routineWindowStatus(routine.startTime, routine.endTime, run?.status, nowHm.value),
+        progress: runProgress(routine.kind, run?.items || []),
+      }
+    })
+})
 
 const bannerBroken = ref(false)
 const logoBroken = ref(false)
@@ -181,7 +234,19 @@ const avgMargin = computed(() => {
 const goToMenu = (menu: MenuItem) => router.push(`/menu/${menu.id}`)
 const goToCombos = () => router.push('/combos')
 
-onMounted(() => {
-  loadAll()
+onMounted(async () => {
+  routineTimer = window.setInterval(() => {
+    nowHm.value = currentTimeHm()
+  }, 30_000)
+  await Promise.all([loadAll(), fetchRoutines(), fetchRuns(today)])
+  try {
+    await ensureRunsForDate(today, menuItems.value, ingredients.value)
+  } catch {
+    /* dashboard still loads without blocking on routines */
+  }
+})
+
+onUnmounted(() => {
+  if (routineTimer) window.clearInterval(routineTimer)
 })
 </script>

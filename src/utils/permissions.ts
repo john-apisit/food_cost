@@ -7,6 +7,7 @@ export const PERMISSION_RESOURCES = [
   'ingredients',
   'suppliers',
   'planning',
+  'routines',
   'sales',
   'cashbook',
   'revenue',

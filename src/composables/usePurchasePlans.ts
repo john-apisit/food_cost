@@ -1,6 +1,6 @@
 import { ref } from 'vue'
 import { supabase } from '@/config/supabase'
-import type { PurchasePlan } from '@/types/models'
+import type { PurchasePlan, PurchaseRestockLine } from '@/types/models'
 import { mapPurchasePlan } from '@/types/mappers'
 import { useAuth } from './useAuth'
 import { useCurrentStore } from './useCurrentStore'
@@ -14,8 +14,19 @@ const PLAN_SELECT = `
   purchase_plan_lines (
     *,
     menu_item:menu_items (*)
+  ),
+  purchase_plan_restock_lines (
+    *,
+    ingredient:ingredients (*, supplier:suppliers(*))
   )
 `
+
+export type RestockLineInput = {
+  ingredientId: string
+  quantity?: number | null
+  stockStatus: Extract<PurchaseRestockLine['stockStatus'], 'low' | 'out'>
+  note?: string
+}
 
 export function usePurchasePlans() {
   const { user } = useAuth()
@@ -163,11 +174,96 @@ export function usePurchasePlans() {
     )
   }
 
+  const replaceRestockLines = async (planId: string, lines: RestockLineInput[]) => {
+    const { error: deleteError } = await supabase
+      .from('purchase_plan_restock_lines')
+      .delete()
+      .eq('plan_id', planId)
+    if (deleteError) throw deleteError
+
+    if (lines.length === 0) return
+
+    const { error: insertError } = await supabase.from('purchase_plan_restock_lines').insert(
+      lines.map((line, index) => ({
+        plan_id: planId,
+        ingredient_id: line.ingredientId,
+        quantity: line.quantity ?? null,
+        stock_status: line.stockStatus,
+        note: line.note?.trim() || null,
+        sort_order: index,
+      })),
+    )
+    if (insertError) throw insertError
+  }
+
+  const upsertRestockPlan = async (payload: {
+    planId?: string | null
+    name: string
+    purchaseDate: string
+    days?: number
+    saleStartDate?: string | null
+    saleEndDate?: string | null
+    menuLines?: Array<{ menuItemId: string; targetQuantity: number }>
+    restockLines: RestockLineInput[]
+  }) => {
+    if (!user.value || !currentStoreId.value) return
+    const dates = {
+      purchase_date: payload.purchaseDate,
+      sale_start_date: payload.saleStartDate?.trim() || payload.purchaseDate,
+      sale_end_date: payload.saleEndDate?.trim() || payload.purchaseDate,
+    }
+
+    let planId = payload.planId ?? null
+
+    if (planId) {
+      const { error: updateError } = await supabase
+        .from('purchase_plans')
+        .update({
+          name: payload.name,
+          days: payload.days ?? 1,
+          ...dates,
+        })
+        .eq('id', planId)
+      if (updateError) throw updateError
+      if (payload.menuLines) await replacePlanLines(planId, payload.menuLines)
+    } else {
+      const { data: inserted, error: insertError } = await supabase
+        .from('purchase_plans')
+        .insert({
+          user_id: user.value.id,
+          store_id: currentStoreId.value,
+          name: payload.name,
+          days: payload.days ?? 1,
+          is_template: false,
+          purchased_ingredient_ids: [],
+          ...dates,
+        })
+        .select()
+        .single()
+      if (insertError) throw insertError
+      planId = inserted.id
+      if (payload.menuLines?.length) await replacePlanLines(planId, payload.menuLines)
+    }
+
+    await replaceRestockLines(planId, payload.restockLines)
+    await fetchPlans()
+    return plans.value.find((plan) => plan.id === planId) ?? null
+  }
+
   const deletePlan = async (id: string) => {
     const { error: deleteError } = await supabase.from('purchase_plans').delete().eq('id', id)
     if (deleteError) throw deleteError
     plans.value = plans.value.filter((p) => p.id !== id)
   }
 
-  return { plans, loading, error, fetchPlans, savePlan, updatePurchasedIngredientIds, deletePlan }
+  return {
+    plans,
+    loading,
+    error,
+    fetchPlans,
+    savePlan,
+    upsertRestockPlan,
+    updatePurchasedIngredientIds,
+    deletePlan,
+  }
 }

@@ -540,6 +540,222 @@ export interface Database {
         }
         Relationships: []
       }
+      purchase_plan_restock_lines: {
+        Row: {
+          id: string
+          plan_id: string
+          ingredient_id: string
+          quantity: number | null
+          stock_status: 'low' | 'out'
+          note: string | null
+          sort_order: number
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          plan_id: string
+          ingredient_id: string
+          quantity?: number | null
+          stock_status: 'low' | 'out'
+          note?: string | null
+          sort_order?: number
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          plan_id?: string
+          ingredient_id?: string
+          quantity?: number | null
+          stock_status?: 'low' | 'out'
+          note?: string | null
+          sort_order?: number
+          created_at?: string
+        }
+        Relationships: []
+      }
+      routines: {
+        Row: {
+          id: string
+          user_id: string | null
+          store_id: string
+          name: string
+          description: string | null
+          kind: 'kitchen_prep' | 'stock_check' | 'custom'
+          days: string[]
+          start_time: string
+          end_time: string
+          include_packaging: boolean
+          sort_order: number
+          is_active: boolean
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id?: string | null
+          store_id: string
+          name: string
+          description?: string | null
+          kind: 'kitchen_prep' | 'stock_check' | 'custom'
+          days?: string[]
+          start_time: string
+          end_time: string
+          include_packaging?: boolean
+          sort_order?: number
+          is_active?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string | null
+          store_id?: string
+          name?: string
+          description?: string | null
+          kind?: 'kitchen_prep' | 'stock_check' | 'custom'
+          days?: string[]
+          start_time?: string
+          end_time?: string
+          include_packaging?: boolean
+          sort_order?: number
+          is_active?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      routine_items: {
+        Row: {
+          id: string
+          routine_id: string
+          title: string
+          notes: string | null
+          source: 'manual' | 'menu_prep' | 'ingredient'
+          source_id: string | null
+          sort_order: number
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          routine_id: string
+          title: string
+          notes?: string | null
+          source?: 'manual' | 'menu_prep' | 'ingredient'
+          source_id?: string | null
+          sort_order?: number
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          routine_id?: string
+          title?: string
+          notes?: string | null
+          source?: 'manual' | 'menu_prep' | 'ingredient'
+          source_id?: string | null
+          sort_order?: number
+          created_at?: string
+        }
+        Relationships: []
+      }
+      routine_runs: {
+        Row: {
+          id: string
+          routine_id: string
+          store_id: string
+          user_id: string | null
+          run_date: string
+          status: 'pending' | 'in_progress' | 'done' | 'skipped'
+          note: string | null
+          completed_at: string | null
+          completed_by: string | null
+          purchase_plan_id: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          routine_id: string
+          store_id: string
+          user_id?: string | null
+          run_date: string
+          status?: 'pending' | 'in_progress' | 'done' | 'skipped'
+          note?: string | null
+          completed_at?: string | null
+          completed_by?: string | null
+          purchase_plan_id?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          routine_id?: string
+          store_id?: string
+          user_id?: string | null
+          run_date?: string
+          status?: 'pending' | 'in_progress' | 'done' | 'skipped'
+          note?: string | null
+          completed_at?: string | null
+          completed_by?: string | null
+          purchase_plan_id?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      routine_run_items: {
+        Row: {
+          id: string
+          run_id: string
+          template_item_id: string | null
+          title: string
+          notes: string | null
+          source: 'manual' | 'menu_prep' | 'ingredient'
+          source_id: string | null
+          sort_order: number
+          is_done: boolean
+          done_at: string | null
+          done_by: string | null
+          stock_status: 'ok' | 'low' | 'out' | null
+          restock_quantity: number | null
+          item_note: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          run_id: string
+          template_item_id?: string | null
+          title: string
+          notes?: string | null
+          source?: 'manual' | 'menu_prep' | 'ingredient'
+          source_id?: string | null
+          sort_order?: number
+          is_done?: boolean
+          done_at?: string | null
+          done_by?: string | null
+          stock_status?: 'ok' | 'low' | 'out' | null
+          restock_quantity?: number | null
+          item_note?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          run_id?: string
+          template_item_id?: string | null
+          title?: string
+          notes?: string | null
+          source?: 'manual' | 'menu_prep' | 'ingredient'
+          source_id?: string | null
+          sort_order?: number
+          is_done?: boolean
+          done_at?: string | null
+          done_by?: string | null
+          stock_status?: 'ok' | 'low' | 'out' | null
+          restock_quantity?: number | null
+          item_note?: string | null
+          created_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           id: string

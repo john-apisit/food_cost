@@ -5,8 +5,11 @@
     role="dialog"
     aria-modal="true"
   >
-    <div class="bg-white rounded-xl shadow-xl w-full max-h-[90vh] overflow-y-auto" :class="wide ? 'max-w-2xl' : 'max-w-md'">
-      <div class="flex items-center justify-between px-6 py-4 border-b">
+    <div
+      class="bg-white rounded-xl shadow-xl w-full max-h-[90vh] overflow-y-auto"
+      :class="xl ? 'max-w-3xl' : wide ? 'max-w-2xl' : 'max-w-md'"
+    >
+      <div class="flex items-center justify-between px-6 py-4 border-b border-gray-100">
         <h3 class="text-lg font-bold">{{ title }}</h3>
         <button type="button" class="text-gray-400 hover:text-gray-700" aria-label="ปิด" @click="$emit('close')">×</button>
       </div>
@@ -22,6 +25,7 @@ defineProps<{
   isOpen: boolean
   title: string
   wide?: boolean
+  xl?: boolean
 }>()
 defineEmits<{ close: [] }>()
 </script>

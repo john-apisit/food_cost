@@ -3,6 +3,10 @@ import {
   isCashEntryType,
   isCashPaymentMethod,
   isMenuStatus,
+  isRoutineItemSource,
+  isRoutineKind,
+  isRoutineRunStatus,
+  isStockStatus,
   WEEKDAYS,
   type CashEntry,
   type Combo,
@@ -13,7 +17,12 @@ import {
   type PriceHistory,
   type PurchasePlan,
   type PurchasePlanLine,
+  type PurchaseRestockLine,
   type RecipeLine,
+  type Routine,
+  type RoutineItem,
+  type RoutineRun,
+  type RoutineRunItem,
   type SalesRecord,
   type StoreSettings,
   type Supplier,
@@ -233,8 +242,26 @@ export function mapPurchasePlanLine(row: Record<string, unknown>): PurchasePlanL
   }
 }
 
+export function mapPurchaseRestockLine(row: Record<string, unknown>): PurchaseRestockLine {
+  const ingredientRaw = row.ingredient as Record<string, unknown> | Record<string, unknown>[] | undefined
+  const ingredientRow = Array.isArray(ingredientRaw) ? ingredientRaw[0] : ingredientRaw
+  const status = row.stock_status === 'out' ? 'out' : 'low'
+
+  return {
+    id: String(row.id),
+    planId: String(row.plan_id),
+    ingredientId: String(row.ingredient_id),
+    quantity: row.quantity == null ? undefined : num(row.quantity),
+    stockStatus: status,
+    note: optStr(row.note),
+    sortOrder: num(row.sort_order),
+    ingredient: ingredientRow ? mapIngredient(ingredientRow) : undefined,
+  }
+}
+
 export function mapPurchasePlan(row: Record<string, unknown>): PurchasePlan {
   const linesRaw = row.purchase_plan_lines ?? row.lines
+  const restockRaw = row.purchase_plan_restock_lines ?? row.restockLines
 
   return {
     id: String(row.id),
@@ -253,6 +280,107 @@ export function mapPurchasePlan(row: Record<string, unknown>): PurchasePlan {
     updatedAt: String(row.updated_at),
     lines: Array.isArray(linesRaw)
       ? linesRaw.map((line) => mapPurchasePlanLine(line as Record<string, unknown>))
+      : undefined,
+    restockLines: Array.isArray(restockRaw)
+      ? restockRaw.map((line) => mapPurchaseRestockLine(line as Record<string, unknown>))
+      : undefined,
+  }
+}
+
+export function mapRoutineItem(row: Record<string, unknown>): RoutineItem {
+  return {
+    id: String(row.id),
+    routineId: String(row.routine_id),
+    title: String(row.title ?? ''),
+    notes: optStr(row.notes),
+    source: isRoutineItemSource(row.source) ? row.source : 'manual',
+    sourceId: optStr(row.source_id),
+    sortOrder: num(row.sort_order),
+    createdAt: String(row.created_at),
+  }
+}
+
+export function mapRoutine(row: Record<string, unknown>): Routine {
+  const itemsRaw = row.routine_items ?? row.items
+  const days = Array.isArray(row.days) ? row.days.map(String) : []
+
+  return {
+    id: String(row.id),
+    userId: String(row.user_id ?? ''),
+    storeId: optStr(row.store_id),
+    name: String(row.name),
+    description: optStr(row.description),
+    kind: isRoutineKind(row.kind) ? row.kind : 'custom',
+    days: WEEKDAYS.filter((day) => days.includes(day)),
+    startTime: optTime(row.start_time) ?? '09:00',
+    endTime: optTime(row.end_time) ?? '10:00',
+    includePackaging: Boolean(row.include_packaging),
+    sortOrder: num(row.sort_order),
+    isActive: row.is_active !== false,
+    createdAt: String(row.created_at),
+    updatedAt: String(row.updated_at),
+    items: Array.isArray(itemsRaw)
+      ? itemsRaw
+          .map((item) => mapRoutineItem(item as Record<string, unknown>))
+          .sort((a, b) => a.sortOrder - b.sortOrder)
+      : [],
+  }
+}
+
+export function mapRoutineRunItem(row: Record<string, unknown>): RoutineRunItem {
+  return {
+    id: String(row.id),
+    runId: String(row.run_id),
+    templateItemId: optStr(row.template_item_id),
+    title: String(row.title ?? ''),
+    notes: optStr(row.notes),
+    source: isRoutineItemSource(row.source) ? row.source : 'manual',
+    sourceId: optStr(row.source_id),
+    sortOrder: num(row.sort_order),
+    isDone: Boolean(row.is_done),
+    doneAt: optStr(row.done_at),
+    doneBy: optStr(row.done_by),
+    stockStatus: isStockStatus(row.stock_status) ? row.stock_status : undefined,
+    restockQuantity: row.restock_quantity == null ? undefined : num(row.restock_quantity),
+    itemNote: optStr(row.item_note),
+    createdAt: String(row.created_at),
+  }
+}
+
+export function mapRoutineRun(row: Record<string, unknown>): RoutineRun {
+  const itemsRaw = row.routine_run_items ?? row.items
+  const routineRaw = nestedRow(row.routine ?? row.routines)
+
+  return {
+    id: String(row.id),
+    routineId: String(row.routine_id),
+    storeId: optStr(row.store_id),
+    userId: String(row.user_id ?? ''),
+    runDate: optDate(row.run_date) ?? String(row.run_date ?? ''),
+    status: isRoutineRunStatus(row.status) ? row.status : 'pending',
+    note: optStr(row.note),
+    completedAt: optStr(row.completed_at),
+    completedBy: optStr(row.completed_by),
+    purchasePlanId: optStr(row.purchase_plan_id),
+    createdAt: String(row.created_at),
+    updatedAt: String(row.updated_at),
+    items: Array.isArray(itemsRaw)
+      ? itemsRaw
+          .map((item) => mapRoutineRunItem(item as Record<string, unknown>))
+          .sort((a, b) => a.sortOrder - b.sortOrder)
+      : [],
+    routine: routineRaw
+      ? {
+          id: String(routineRaw.id),
+          name: String(routineRaw.name ?? ''),
+          kind: isRoutineKind(routineRaw.kind) ? routineRaw.kind : 'custom',
+          description: optStr(routineRaw.description),
+          days: WEEKDAYS.filter((day) =>
+            (Array.isArray(routineRaw.days) ? routineRaw.days.map(String) : []).includes(day),
+          ),
+          startTime: optTime(routineRaw.start_time) ?? '09:00',
+          endTime: optTime(routineRaw.end_time) ?? '10:00',
+        }
       : undefined,
   }
 }

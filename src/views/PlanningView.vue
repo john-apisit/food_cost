@@ -105,6 +105,13 @@
         </div>
       </div>
 
+      <div v-if="restockLines.length" class="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+        <p class="font-medium">จากเช็คสต็อก — ต้องซื้อ {{ restockLines.length }} รายการ</p>
+        <p class="mt-1 text-amber-800">
+          รายการที่ใกล้หมดหรือหมดจะโชว์ด้านบนและไฮไลต์ไว้ ปริมาณจากสูตรยังใช้ได้ ถ้าใส่จำนวนตอนเช็คของจะใช้จำนวนนั้นเมื่อมากกว่าสูตร
+        </p>
+      </div>
+
       <div v-if="prepSteps.length" class="card p-6 space-y-3">
         <div>
           <h2 class="text-lg font-semibold">เตรียมของก่อนเปิดร้าน</h2>
@@ -181,7 +188,13 @@
                     v-for="item in group.items"
                     :key="item.ingredient.id"
                     class="border-t border-gray-100"
-                    :class="isPurchased(item.ingredient.id) ? 'bg-green-50' : ''"
+                    :class="
+                      isPurchased(item.ingredient.id)
+                        ? 'bg-green-50'
+                        : item.needsRestock
+                          ? 'bg-amber-50'
+                          : ''
+                    "
                   >
                     <td class="px-3 py-3">
                       <input
@@ -195,7 +208,15 @@
                     <td class="px-4 py-3">
                       <div :class="isPurchased(item.ingredient.id) ? 'text-green-700 font-medium' : ''">
                         {{ item.ingredient.name }}
+                        <span
+                          v-if="item.needsRestock && item.stockStatus"
+                          class="ml-2 rounded-full px-2 py-0.5 text-xs font-medium"
+                          :class="item.stockStatus === 'out' ? 'bg-red-100 text-red-800' : 'bg-amber-100 text-amber-800'"
+                        >
+                          {{ item.stockStatus === 'out' ? 'หมด' : 'ใกล้หมด' }}
+                        </span>
                       </div>
+                      <p v-if="item.restockNote" class="text-xs text-amber-800 mt-0.5">{{ item.restockNote }}</p>
                       <div v-if="showMenus" class="mt-1 flex flex-wrap gap-x-2 gap-y-1">
                         <button
                           v-for="menu in item.fromMenus"
@@ -274,6 +295,7 @@
 
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
+import { useRoute } from 'vue-router'
 import { X } from 'lucide-vue-next'
 import MainLayout from '@/layouts/MainLayout.vue'
 import DatePicker from '@/components/common/DatePicker.vue'
@@ -290,6 +312,7 @@ import {
 } from '@/composables/usePurchasePlanning'
 import { usePurchasePlans } from '@/composables/usePurchasePlans'
 import { useToast } from '@/composables/useToast'
+import { mergeRestockIntoPurchaseItems } from '@/utils/routines'
 import {
   formatCurrency,
   formatDateOnly,
@@ -298,8 +321,9 @@ import {
   inclusiveDayCount,
   saleUnitLabel,
 } from '@/utils/format'
-import type { PurchaseItem, PurchasePlan } from '@/types/models'
+import type { PurchaseItem, PurchasePlan, PurchaseRestockLine } from '@/types/models'
 
+const route = useRoute()
 const { menuItems, fetchMenuItems } = useMenu()
 const { ingredients, fetchIngredients } = useIngredients()
 const { calculatePurchaseList } = usePurchasePlanning()
@@ -317,9 +341,13 @@ const showMenus = ref(false)
 const purchasedIds = ref<Set<string>>(new Set())
 const currentPlanId = ref<string | null>(null)
 const selectedMenuName = ref<string | null>(null)
+const restockLines = ref<PurchaseRestockLine[]>([])
 
 const hasSaleRange = computed(() => Boolean(saleStartDate.value && saleEndDate.value))
-const canCalculate = computed(() => menuSelections.value.some((s) => s.menuItemId && s.quantity > 0))
+const canCalculate = computed(
+  () =>
+    menuSelections.value.some((s) => s.menuItemId && s.quantity > 0) || restockLines.value.length > 0,
+)
 
 watch([saleStartDate, saleEndDate], ([start, end]) => {
   if (start && end) {
@@ -368,7 +396,16 @@ const selectedLines = () =>
 const prepSteps = computed(() => uniquePrepSteps(selectedLines()))
 
 const calculate = () => {
-  purchaseItems.value = calculatePurchaseList(selectedLines(), days.value, ingredients.value, menuItems.value)
+  const base = calculatePurchaseList(selectedLines(), days.value, ingredients.value, menuItems.value)
+  purchaseItems.value = mergeRestockIntoPurchaseItems(
+    base,
+    restockLines.value.map((line) => ({
+      ingredient: line.ingredient!,
+      quantity: line.quantity,
+      stockStatus: line.stockStatus,
+      note: line.note,
+    })).filter((line) => line.ingredient),
+  )
 }
 
 const planPayload = () => ({
@@ -443,6 +480,7 @@ const loadPlan = (plan: PurchasePlan) => {
   }))
   if (!menuSelections.value.length) menuSelections.value = [{ menuItemId: '', quantity: 1 }]
   purchasedIds.value = new Set(plan.purchasedIngredientIds)
+  restockLines.value = (plan.restockLines || []).filter((line) => line.ingredient)
   calculate()
 }
 
@@ -456,5 +494,9 @@ const periodNote = computed(() => {
 
 onMounted(async () => {
   await Promise.all([fetchMenuItems(), fetchIngredients(), fetchPlans()])
+  const planId = typeof route.query.plan === 'string' ? route.query.plan : ''
+  if (!planId) return
+  const plan = plans.value.find((row) => row.id === planId)
+  if (plan) loadPlan(plan)
 })
 </script>

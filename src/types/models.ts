@@ -53,6 +53,138 @@ export function isWeekday(value: unknown): value is Weekday {
   return (WEEKDAYS as readonly string[]).includes(String(value))
 }
 
+export const ROUTINE_KINDS = ['kitchen_prep', 'stock_check', 'custom'] as const
+export type RoutineKind = (typeof ROUTINE_KINDS)[number]
+export const ROUTINE_KIND_LABELS: Record<RoutineKind, string> = {
+  kitchen_prep: 'เตรียมครัว',
+  stock_check: 'เช็ควัตถุดิบ',
+  custom: 'งานอื่นๆ',
+}
+export function isRoutineKind(value: unknown): value is RoutineKind {
+  return (ROUTINE_KINDS as readonly string[]).includes(String(value))
+}
+
+export const ROUTINE_ITEM_SOURCES = ['manual', 'menu_prep', 'ingredient'] as const
+export type RoutineItemSource = (typeof ROUTINE_ITEM_SOURCES)[number]
+export function isRoutineItemSource(value: unknown): value is RoutineItemSource {
+  return (ROUTINE_ITEM_SOURCES as readonly string[]).includes(String(value))
+}
+
+export const ROUTINE_RUN_STATUSES = ['pending', 'in_progress', 'done', 'skipped'] as const
+export type RoutineRunStatus = (typeof ROUTINE_RUN_STATUSES)[number]
+export const ROUTINE_RUN_STATUS_LABELS: Record<RoutineRunStatus, string> = {
+  pending: 'ยังไม่เริ่ม',
+  in_progress: 'กำลังทำ',
+  done: 'เสร็จแล้ว',
+  skipped: 'ข้ามวันนี้',
+}
+export function isRoutineRunStatus(value: unknown): value is RoutineRunStatus {
+  return (ROUTINE_RUN_STATUSES as readonly string[]).includes(String(value))
+}
+
+export const STOCK_STATUSES = ['ok', 'low', 'out'] as const
+export type StockStatus = (typeof STOCK_STATUSES)[number]
+export const STOCK_STATUS_LABELS: Record<StockStatus, string> = {
+  ok: 'พอใช้',
+  low: 'ใกล้หมด',
+  out: 'หมด',
+}
+export function isStockStatus(value: unknown): value is StockStatus {
+  return (STOCK_STATUSES as readonly string[]).includes(String(value))
+}
+
+export const ROUTINE_WINDOW_STATUSES = ['upcoming', 'active', 'overdue', 'done', 'skipped'] as const
+export type RoutineWindowStatus = (typeof ROUTINE_WINDOW_STATUSES)[number]
+export const ROUTINE_WINDOW_STATUS_LABELS: Record<RoutineWindowStatus, string> = {
+  upcoming: 'ยังไม่ถึงเวลา',
+  active: 'ถึงเวลาแล้ว',
+  overdue: 'เลยเวลา',
+  done: 'เสร็จแล้ว',
+  skipped: 'ข้ามวันนี้',
+}
+
+export interface RoutineItem {
+  id: string
+  routineId: string
+  title: string
+  notes?: string
+  source: RoutineItemSource
+  sourceId?: string
+  sortOrder: number
+  createdAt: string
+}
+
+export interface Routine {
+  id: string
+  userId: string
+  storeId?: string
+  name: string
+  description?: string
+  kind: RoutineKind
+  days: Weekday[]
+  startTime: string
+  endTime: string
+  includePackaging: boolean
+  sortOrder: number
+  isActive: boolean
+  createdAt: string
+  updatedAt: string
+  items: RoutineItem[]
+}
+
+export interface RoutineRunItem {
+  id: string
+  runId: string
+  templateItemId?: string
+  title: string
+  notes?: string
+  source: RoutineItemSource
+  sourceId?: string
+  sortOrder: number
+  isDone: boolean
+  doneAt?: string
+  doneBy?: string
+  stockStatus?: StockStatus
+  restockQuantity?: number
+  itemNote?: string
+  createdAt: string
+}
+
+export interface RoutineRun {
+  id: string
+  routineId: string
+  storeId?: string
+  userId: string
+  runDate: string
+  status: RoutineRunStatus
+  note?: string
+  completedAt?: string
+  completedBy?: string
+  purchasePlanId?: string
+  createdAt: string
+  updatedAt: string
+  items: RoutineRunItem[]
+  routine?: Pick<Routine, 'id' | 'name' | 'kind' | 'description' | 'days' | 'startTime' | 'endTime'>
+}
+
+export interface RoutinePayload {
+  name: string
+  description?: string
+  kind: RoutineKind
+  days: Weekday[]
+  startTime: string
+  endTime: string
+  includePackaging?: boolean
+  isActive?: boolean
+  sortOrder?: number
+  items: Array<{
+    title: string
+    notes?: string
+    source: RoutineItemSource
+    sourceId?: string
+  }>
+}
+
 export interface StoreSettings {
   id: string
   userId: string
@@ -232,6 +364,18 @@ export interface PurchasePlan {
   createdAt: string
   updatedAt: string
   lines?: PurchasePlanLine[]
+  restockLines?: PurchaseRestockLine[]
+}
+
+export interface PurchaseRestockLine {
+  id: string
+  planId: string
+  ingredientId: string
+  quantity?: number
+  stockStatus: Extract<StockStatus, 'low' | 'out'>
+  note?: string
+  sortOrder: number
+  ingredient?: Ingredient
 }
 
 export interface PurchasePlanLine {
@@ -251,6 +395,9 @@ export interface PurchaseItem {
     menuName: string
     quantity: number
   }>
+  needsRestock?: boolean
+  stockStatus?: StockStatus
+  restockNote?: string
 }
 
 export interface PurchaseSupplierGroup {

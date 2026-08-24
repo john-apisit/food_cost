@@ -100,6 +100,18 @@ const router = createRouter({
       meta: { requiresAuth: true, requiresStore: true, title: 'วางแผนการซื้อ' },
     },
     {
+      path: '/routines',
+      name: 'Routines',
+      component: () => import('@/views/RoutinesView.vue'),
+      meta: { requiresAuth: true, requiresStore: true, title: 'งานประจำวัน' },
+    },
+    {
+      path: '/routines/:id',
+      name: 'RoutineRun',
+      component: () => import('@/views/RoutineRunView.vue'),
+      meta: { requiresAuth: true, requiresStore: true, title: 'งานประจำวัน' },
+    },
+    {
       path: '/combos',
       name: 'Combos',
       component: () => import('@/views/CombosView.vue'),
