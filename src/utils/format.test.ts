@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
+  compareMenuByStatusThenName,
   formatDateOnly,
   formatMonthYear,
   formatSaleDateRange,
@@ -135,6 +136,26 @@ describe('normalizeDateRange', () => {
       from: '2026-08-24',
       to: '2026-08-24',
     })
+  })
+})
+
+describe('compareMenuByStatusThenName', () => {
+  it('sorts by status then Thai name', () => {
+    const menus = [
+      { status: 'discontinued' as const, name: 'ไก่ทอด' },
+      { status: 'testing_recipe' as const, name: 'ต้มยำ' },
+      { status: 'not_ready' as const, name: 'ยำวุ้นเส้น' },
+      { status: 'ready_to_sell' as const, name: 'ผัดกะเพรา' },
+      { status: 'ready_to_sell' as const, name: 'ข้าวผัด' },
+    ]
+
+    expect([...menus].sort(compareMenuByStatusThenName).map((menu) => `${menu.status}:${menu.name}`)).toEqual([
+      'ready_to_sell:ข้าวผัด',
+      'ready_to_sell:ผัดกะเพรา',
+      'testing_recipe:ต้มยำ',
+      'not_ready:ยำวุ้นเส้น',
+      'discontinued:ไก่ทอด',
+    ])
   })
 })
 

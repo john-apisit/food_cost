@@ -114,6 +114,7 @@
         v-if="breakdowns.length"
         :breakdowns="breakdowns"
         :loading="false"
+        default-sort="status"
         :target-margin="settings?.targetMarginPercent"
         @select="goToMenu"
       />

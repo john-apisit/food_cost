@@ -1,4 +1,4 @@
-import { MENU_STATUS_LABELS, type MenuStatus } from '@/types/models'
+import { MENU_STATUSES, MENU_STATUS_LABELS, type MenuStatus } from '@/types/models'
 
 export function formatCurrency(amount: number): string {
   return new Intl.NumberFormat('th-TH', {
@@ -162,6 +162,15 @@ export function saleUnitLabel(type: 'box' | 'bag'): string {
 
 export function menuStatusLabel(status: MenuStatus): string {
   return MENU_STATUS_LABELS[status]
+}
+
+export function compareMenuByStatusThenName(
+  a: { status: MenuStatus; name: string },
+  b: { status: MenuStatus; name: string },
+): number {
+  const statusDiff = MENU_STATUSES.indexOf(a.status) - MENU_STATUSES.indexOf(b.status)
+  if (statusDiff !== 0) return statusDiff
+  return a.name.localeCompare(b.name, 'th')
 }
 
 export function menuStatusBadgeClass(status: MenuStatus): string {

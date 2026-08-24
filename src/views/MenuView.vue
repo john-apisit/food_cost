@@ -79,7 +79,13 @@ import EmptyState from '@/components/common/EmptyState.vue'
 import MenuImage from '@/components/menu/MenuImage.vue'
 import { useMenu } from '@/composables/useMenu'
 import { useToast } from '@/composables/useToast'
-import { formatCurrency, menuStatusBadgeClass, menuStatusLabel, saleUnitLabel } from '@/utils/format'
+import {
+  compareMenuByStatusThenName,
+  formatCurrency,
+  menuStatusBadgeClass,
+  menuStatusLabel,
+  saleUnitLabel,
+} from '@/utils/format'
 import { MENU_STATUSES, MENU_STATUS_LABELS, type MenuItem, type MenuStatus, type SaleUnitType } from '@/types/models'
 
 const { menuItems, loading, fetchMenuItems, deleteMenuItem, duplicateMenuItem } = useMenu()
@@ -89,12 +95,15 @@ const filterUnit = ref<'' | SaleUnitType>('')
 const filterStatus = ref<'' | MenuStatus>('')
 
 const filtered = computed(() =>
-  menuItems.value.filter((menu) => {
-    if (filterUnit.value && menu.saleUnitType !== filterUnit.value) return false
-    if (filterStatus.value && menu.status !== filterStatus.value) return false
-    if (search.value && !menu.name.toLowerCase().includes(search.value.toLowerCase())) return false
-    return true
-  }),
+  menuItems.value
+    .filter((menu) => {
+      if (filterUnit.value && menu.saleUnitType !== filterUnit.value) return false
+      if (filterStatus.value && menu.status !== filterStatus.value) return false
+      if (search.value && !menu.name.toLowerCase().includes(search.value.toLowerCase())) return false
+      return true
+    })
+    .slice()
+    .sort(compareMenuByStatusThenName),
 )
 
 const duplicate = async (menu: MenuItem) => {

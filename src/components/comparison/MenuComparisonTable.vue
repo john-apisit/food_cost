@@ -4,6 +4,7 @@
       <h2 class="text-2xl font-bold">เปรียบเทียบกำไรเมนู</h2>
       <div class="flex flex-col sm:flex-row gap-2">
         <select v-model="sortBy" class="input-field">
+          <option value="status">เรียงตามสถานะ</option>
           <option value="netProfit">เรียงตามกำไรสุทธิ</option>
           <option value="netMarginPercent">เรียงตาม % margin</option>
           <option value="name">เรียงตามชื่อ</option>
@@ -113,22 +114,31 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import { MENU_STATUSES, MENU_STATUS_LABELS, type MenuCostBreakdown, type MenuItem, type MenuStatus } from '@/types/models'
-import { formatCurrency, menuStatusBadgeClass, menuStatusLabel, saleUnitLabel } from '@/utils/format'
+import {
+  compareMenuByStatusThenName,
+  formatCurrency,
+  menuStatusBadgeClass,
+  menuStatusLabel,
+  saleUnitLabel,
+} from '@/utils/format'
 import EmptyState from '@/components/common/EmptyState.vue'
 import MenuImage from '@/components/menu/MenuImage.vue'
 import MultiSelectFilter from '@/components/common/MultiSelectFilter.vue'
+
+type MenuSortBy = 'status' | 'netProfit' | 'netMarginPercent' | 'name'
 
 const props = defineProps<{
   breakdowns: MenuCostBreakdown[]
   loading: boolean
   targetMargin?: number
+  defaultSort?: MenuSortBy
 }>()
 
 defineEmits<{
   select: [menuItem: MenuItem]
 }>()
 
-const sortBy = ref<'netProfit' | 'netMarginPercent' | 'name'>('netProfit')
+const sortBy = ref<MenuSortBy>(props.defaultSort ?? 'netProfit')
 const filterCategory = ref('')
 const filterUnitType = ref<'' | 'box' | 'bag'>('')
 const filterStatuses = ref<MenuStatus[]>([])
@@ -159,6 +169,7 @@ const sortedBreakdowns = computed(() => {
   const sorted = [...filteredBreakdowns.value]
   if (sortBy.value === 'netProfit') sorted.sort((a, b) => b.netProfit - a.netProfit)
   else if (sortBy.value === 'netMarginPercent') sorted.sort((a, b) => b.netMarginPercent - a.netMarginPercent)
+  else if (sortBy.value === 'status') sorted.sort((a, b) => compareMenuByStatusThenName(a.menuItem, b.menuItem))
   else sorted.sort((a, b) => a.menuItem.name.localeCompare(b.menuItem.name, 'th'))
   return sorted
 })
