@@ -4,6 +4,7 @@ import type { Supplier } from '@/types/models'
 import type { Database } from '@/types/database.types'
 import { mapSupplier } from '@/types/mappers'
 import { useAuth } from './useAuth'
+import { useCurrentStore } from './useCurrentStore'
 
 const suppliers = ref<Supplier[]>([])
 const loading = ref(false)
@@ -17,7 +18,7 @@ export type SupplierPayload = {
 
 function duplicateNameError(e: unknown) {
   const message = e instanceof Error ? e.message : String(e)
-  if (message.includes('idx_suppliers_user_id_lower_name') || message.includes('duplicate key')) {
+  if (message.includes('idx_suppliers_store_id_lower_name') || message.includes('duplicate key')) {
     return new Error('มีซัพพลายเออร์ชื่อนี้อยู่แล้ว')
   }
   return e instanceof Error ? e : new Error('บันทึกซัพพลายเออร์ไม่สำเร็จ')
@@ -25,9 +26,10 @@ function duplicateNameError(e: unknown) {
 
 export function useSuppliers() {
   const { user } = useAuth()
+  const { currentStoreId } = useCurrentStore()
 
   const fetchSuppliers = async (includeInactive = false) => {
-    if (!user.value) return
+    if (!user.value || !currentStoreId.value) return
 
     loading.value = true
     error.value = null
@@ -36,7 +38,7 @@ export function useSuppliers() {
       let query = supabase
         .from('suppliers')
         .select('*')
-        .eq('user_id', user.value.id)
+        .eq('store_id', currentStoreId.value)
         .order('name')
 
       if (!includeInactive) query = query.eq('is_active', true)
@@ -53,7 +55,7 @@ export function useSuppliers() {
   }
 
   const createSupplier = async (payload: SupplierPayload) => {
-    if (!user.value) return
+    if (!user.value || !currentStoreId.value) return
 
     const name = payload.name.trim()
     if (!name) throw new Error('กรุณาใส่ชื่อซัพพลายเออร์')
@@ -66,6 +68,7 @@ export function useSuppliers() {
         .from('suppliers')
         .insert({
           user_id: user.value.id,
+          store_id: currentStoreId.value,
           name,
           notes: payload.notes?.trim() || null,
           is_active: payload.isActive ?? true,

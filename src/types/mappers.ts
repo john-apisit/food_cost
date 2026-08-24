@@ -49,7 +49,8 @@ export function mapStoreSettings(row: Record<string, unknown>): StoreSettings {
   const days = Array.isArray(row.open_days) ? row.open_days.map(String) : []
   return {
     id: String(row.id),
-    userId: String(row.user_id),
+    userId: String(row.user_id ?? ''),
+    storeId: optStr(row.store_id),
     platformName: String(row.platform_name ?? 'LINE MAN'),
     platformFeePercent: num(row.platform_fee_percent, 30),
     fixedCostBox: num(row.fixed_cost_box),
@@ -84,7 +85,8 @@ function nestedRow(value: unknown): Record<string, unknown> | undefined {
 export function mapSupplier(row: Record<string, unknown>): Supplier {
   return {
     id: String(row.id),
-    userId: String(row.user_id),
+    userId: String(row.user_id ?? ''),
+    storeId: optStr(row.store_id),
     name: String(row.name),
     notes: optStr(row.notes),
     isActive: Boolean(row.is_active),
@@ -97,7 +99,8 @@ export function mapIngredient(row: Record<string, unknown>): Ingredient {
   const supplierRow = nestedRow(row.supplier ?? row.suppliers)
   return {
     id: String(row.id),
-    userId: String(row.user_id),
+    userId: String(row.user_id ?? ''),
+    storeId: optStr(row.store_id),
     name: String(row.name),
     unit: String(row.unit),
     pricePerUnit: num(row.price_per_unit),
@@ -150,7 +153,8 @@ export function mapMenuItem(row: Record<string, unknown>, nested = true): MenuIt
 
   return {
     id: String(row.id),
-    userId: String(row.user_id),
+    userId: String(row.user_id ?? ''),
+    storeId: optStr(row.store_id),
     name: String(row.name),
     description: optStr(row.description),
     saleUnitType: row.sale_unit_type === 'bag' ? 'bag' : 'box',
@@ -199,7 +203,8 @@ export function mapCombo(row: Record<string, unknown>): Combo {
 
   return {
     id: String(row.id),
-    userId: String(row.user_id),
+    userId: String(row.user_id ?? ''),
+    storeId: optStr(row.store_id),
     name: String(row.name),
     description: optStr(row.description),
     imageUrl: optStr(row.image_url),
@@ -233,7 +238,8 @@ export function mapPurchasePlan(row: Record<string, unknown>): PurchasePlan {
 
   return {
     id: String(row.id),
-    userId: String(row.user_id),
+    userId: String(row.user_id ?? ''),
+    storeId: optStr(row.store_id),
     name: String(row.name),
     days: num(row.days, 1),
     purchaseDate: optDate(row.purchase_date),
@@ -256,7 +262,8 @@ export function mapSalesRecord(row: Record<string, unknown>): SalesRecord {
 
   return {
     id: String(row.id),
-    userId: String(row.user_id),
+    userId: String(row.user_id ?? ''),
+    storeId: optStr(row.store_id),
     planId: optStr(row.plan_id),
     menuItemId: String(row.menu_item_id),
     targetQty: row.target_qty == null ? undefined : num(row.target_qty),
@@ -274,7 +281,8 @@ export function mapCashEntry(row: Record<string, unknown>): CashEntry {
 
   return {
     id: String(row.id),
-    userId: String(row.user_id),
+    userId: String(row.user_id ?? ''),
+    storeId: optStr(row.store_id),
     type: isCashEntryType(row.type) ? row.type : 'expense',
     category: isCashCategory(row.category) ? row.category : 'other',
     amount: num(row.amount),

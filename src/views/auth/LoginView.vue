@@ -55,12 +55,19 @@
 
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import AuthLayout from '@/layouts/AuthLayout.vue'
 import { useAuth } from '@/composables/useAuth'
 
 const router = useRouter()
+const route = useRoute()
 const { signIn, signUp } = useAuth()
+
+function nextPath() {
+  const redirect = String(route.query.redirect || '')
+  if (redirect.startsWith('/') && !redirect.startsWith('//')) return redirect
+  return '/dashboard'
+}
 
 const email = ref('')
 const password = ref('')
@@ -80,7 +87,7 @@ const handleSubmit = async () => {
     if (mode.value === 'signup') {
       const data = await signUp(email.value, password.value)
       if (data.session) {
-        router.push('/dashboard')
+        router.push(nextPath())
       } else {
         info.value = 'สมัครสมาชิกสำเร็จ! กรุณาตรวจสอบอีเมลเพื่อยืนยันบัญชี'
       }
@@ -88,7 +95,7 @@ const handleSubmit = async () => {
     }
 
     await signIn(email.value, password.value)
-    router.push('/dashboard')
+    router.push(nextPath())
   } catch (e: unknown) {
     error.value = e instanceof Error ? e.message : 'เกิดข้อผิดพลาด'
   } finally {

@@ -74,11 +74,13 @@ export interface StoreSettings {
   phone?: string
   createdAt: string
   updatedAt: string
+  storeId?: string
 }
 
 export interface Supplier {
   id: string
   userId: string
+  storeId?: string
   name: string
   notes?: string
   isActive: boolean
@@ -89,6 +91,7 @@ export interface Supplier {
 export interface Ingredient {
   id: string
   userId: string
+  storeId?: string
   name: string
   unit: string
   pricePerUnit: number
@@ -136,6 +139,7 @@ export interface MenuAddon {
 export interface MenuItem {
   id: string
   userId: string
+  storeId?: string
   name: string
   description?: string
   saleUnitType: SaleUnitType
@@ -176,6 +180,7 @@ export interface MenuCostBreakdown {
 export interface Combo {
   id: string
   userId: string
+  storeId?: string
   name: string
   description?: string
   imageUrl?: string
@@ -216,6 +221,7 @@ export interface ComboCostBreakdown {
 export interface PurchasePlan {
   id: string
   userId: string
+  storeId?: string
   name: string
   days: number
   purchaseDate?: string
@@ -263,6 +269,7 @@ export interface PurchaseCategoryGroup {
 export interface SalesRecord {
   id: string
   userId: string
+  storeId?: string
   planId?: string
   menuItemId: string
   targetQty?: number
@@ -366,6 +373,7 @@ export function isCashPaymentMethod(value: unknown): value is CashPaymentMethod 
 export interface CashEntry {
   id: string
   userId: string
+  storeId?: string
   type: CashEntryType
   category: CashCategory
   amount: number

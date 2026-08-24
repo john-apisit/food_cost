@@ -3,6 +3,7 @@ import { supabase } from '@/config/supabase'
 import type { PurchasePlan } from '@/types/models'
 import { mapPurchasePlan } from '@/types/mappers'
 import { useAuth } from './useAuth'
+import { useCurrentStore } from './useCurrentStore'
 
 const plans = ref<PurchasePlan[]>([])
 const loading = ref(false)
@@ -18,9 +19,10 @@ const PLAN_SELECT = `
 
 export function usePurchasePlans() {
   const { user } = useAuth()
+  const { currentStoreId } = useCurrentStore()
 
   const fetchPlans = async () => {
-    if (!user.value) return
+    if (!user.value || !currentStoreId.value) return
     loading.value = true
     error.value = null
 
@@ -28,7 +30,7 @@ export function usePurchasePlans() {
       const { data, error: fetchError } = await supabase
         .from('purchase_plans')
         .select(PLAN_SELECT)
-        .eq('user_id', user.value.id)
+        .eq('store_id', currentStoreId.value)
         .order('created_at', { ascending: false })
 
       if (fetchError) throw fetchError
@@ -62,14 +64,14 @@ export function usePurchasePlans() {
     if (lineError) throw lineError
   }
 
-  const findExistingPlanId = async (userId: string, name: string) => {
+  const findExistingPlanId = async (storeId: string, name: string) => {
     const localMatch = plans.value.find((plan) => plan.name.trim() === name)
     if (localMatch) return localMatch.id
 
     const { data, error: existingError } = await supabase
       .from('purchase_plans')
       .select('id')
-      .eq('user_id', userId)
+      .eq('store_id', storeId)
       .eq('name', name)
       .order('updated_at', { ascending: false })
       .limit(1)
@@ -88,13 +90,13 @@ export function usePurchasePlans() {
     lines: Array<{ menuItemId: string; targetQuantity: number }>
     purchasedIngredientIds?: string[]
   }) => {
-    if (!user.value) return
+    if (!user.value || !currentStoreId.value) return
     loading.value = true
 
     try {
       const name = payload.name.trim() || 'แผนซื้อของ'
       const purchasedIngredientIds = payload.purchasedIngredientIds ?? []
-      const existingId = await findExistingPlanId(user.value.id, name)
+      const existingId = await findExistingPlanId(currentStoreId.value, name)
       const dates = {
         purchase_date: payload.purchaseDate?.trim() || null,
         sale_start_date: payload.saleStartDate?.trim() || null,
@@ -124,6 +126,7 @@ export function usePurchasePlans() {
           .from('purchase_plans')
           .insert({
             user_id: user.value.id,
+            store_id: currentStoreId.value,
             name,
             days: payload.days,
             is_template: false,

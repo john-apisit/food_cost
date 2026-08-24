@@ -4,6 +4,7 @@ import type { StoreSettings } from '@/types/models'
 import type { Database } from '@/types/database.types'
 import { mapStoreSettings } from '@/types/mappers'
 import { useAuth } from './useAuth'
+import { useCurrentStore } from './useCurrentStore'
 
 const settings = ref<StoreSettings | null>(null)
 const loading = ref(false)
@@ -11,9 +12,10 @@ const error = ref<string | null>(null)
 
 export function useStoreSettings() {
   const { user } = useAuth()
+  const { currentStoreId, loadMemberships } = useCurrentStore()
 
   const fetchSettings = async () => {
-    if (!user.value) return
+    if (!user.value || !currentStoreId.value) return
 
     loading.value = true
     error.value = null
@@ -22,7 +24,7 @@ export function useStoreSettings() {
       const { data, error: fetchError } = await supabase
         .from('store_settings')
         .select('*')
-        .eq('user_id', user.value.id)
+        .eq('store_id', currentStoreId.value)
         .maybeSingle()
 
       if (fetchError) throw fetchError
@@ -32,6 +34,7 @@ export function useStoreSettings() {
           .from('store_settings')
           .insert({
             user_id: user.value.id,
+            store_id: currentStoreId.value,
             platform_name: 'LINE MAN',
             platform_fee_percent: 30,
             fixed_cost_box: 5,
@@ -55,7 +58,7 @@ export function useStoreSettings() {
   }
 
   const updateSettings = async (updates: Partial<StoreSettings>) => {
-    if (!user.value) return
+    if (!user.value || !currentStoreId.value) return
 
     loading.value = true
     error.value = null
@@ -86,12 +89,20 @@ export function useStoreSettings() {
       const { data, error: updateError } = await supabase
         .from('store_settings')
         .update(payload)
-        .eq('user_id', user.value.id)
+        .eq('store_id', currentStoreId.value)
         .select()
         .single()
 
       if (updateError) throw updateError
       settings.value = mapStoreSettings(data as Record<string, unknown>)
+
+      if (updates.storeName !== undefined && currentStoreId.value) {
+        await supabase
+          .from('stores')
+          .update({ name: updates.storeName?.trim() || 'ร้านของฉัน' })
+          .eq('id', currentStoreId.value)
+        await loadMemberships()
+      }
       return settings.value
     } catch (e: unknown) {
       error.value = e instanceof Error ? e.message : 'บันทึกตั้งค่าไม่สำเร็จ'

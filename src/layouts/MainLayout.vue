@@ -47,6 +47,22 @@
         </button>
       </div>
 
+      <div class="border-b border-gray-100 px-3 py-3 space-y-2">
+        <label class="block text-xs font-medium text-gray-500">ร้านที่ใช้งาน</label>
+        <select
+          class="input-field w-full"
+          :value="currentStoreId ?? ''"
+          @change="onStoreChange"
+        >
+          <option v-for="item in memberships" :key="item.storeId" :value="item.storeId">
+            {{ item.storeName }}
+          </option>
+        </select>
+        <button type="button" class="text-sm font-medium text-primary-600 hover:text-primary-700" @click="showCreateStore = true">
+          + สร้างร้านใหม่
+        </button>
+      </div>
+
       <nav class="flex-1 space-y-0.5 overflow-y-auto px-3 py-3">
         <router-link
           v-for="item in navItems"
@@ -93,6 +109,28 @@
         <slot />
       </main>
     </div>
+
+    <div
+      v-if="showCreateStore"
+      class="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 p-4"
+      role="dialog"
+      aria-modal="true"
+    >
+      <form class="w-full max-w-md rounded-xl bg-white p-6 shadow-xl space-y-4" @submit.prevent="handleCreateStore">
+        <h3 class="text-lg font-bold">สร้างร้านใหม่</h3>
+        <div>
+          <label class="block text-sm font-medium mb-1">ชื่อร้าน</label>
+          <input v-model="newStoreName" class="input-field w-full" placeholder="เช่น ร้านครัวคุณแม่" />
+        </div>
+        <p v-if="createError" class="text-sm text-red-600">{{ createError }}</p>
+        <div class="flex justify-end gap-2">
+          <button type="button" class="btn-secondary" @click="showCreateStore = false">ยกเลิก</button>
+          <button type="submit" class="btn-primary" :disabled="creatingStore">
+            {{ creatingStore ? 'กำลังสร้าง...' : 'สร้างร้าน' }}
+          </button>
+        </div>
+      </form>
+    </div>
   </div>
 </template>
 
@@ -113,34 +151,69 @@ import {
   Settings,
   Truck,
   User,
+  Users,
   UtensilsCrossed,
   Wallet,
   X,
 } from 'lucide-vue-next'
 import { useAuth } from '@/composables/useAuth'
+import { useCurrentStore } from '@/composables/useCurrentStore'
+import { usePermissions } from '@/composables/usePermissions'
 
 const router = useRouter()
 const route = useRoute()
 const slots = useSlots()
 const { signOut, user, displayName } = useAuth()
+const { memberships, currentStoreId, selectStore, createStore } = useCurrentStore()
+const { isAdmin } = usePermissions()
 const mobileOpen = ref(false)
+const showCreateStore = ref(false)
+const newStoreName = ref('')
+const creatingStore = ref(false)
+const createError = ref('')
 
 const hasBanner = computed(() => Boolean(slots.banner))
 const profileLabel = computed(() => displayName.value || user.value?.email || 'โปรไฟล์')
 
-const navItems: { label: string; to: string; icon: Component }[] = [
-  { label: 'หน้าแรก', to: '/dashboard', icon: Home },
-  { label: 'เมนู', to: '/menu', icon: UtensilsCrossed },
-  { label: 'ชุดโปร', to: '/combos', icon: Layers },
-  { label: 'วัตถุดิบ', to: '/ingredients', icon: Leaf },
-  { label: 'บรรจุภัณฑ์', to: '/packaging', icon: Package },
-  { label: 'ซัพพลายเออร์', to: '/suppliers', icon: Truck },
-  { label: 'วางแผนซื้อ', to: '/planning', icon: ClipboardList },
-  { label: 'บันทึกยอดขาย', to: '/sales', icon: BarChart3 },
-  { label: 'รายรับ-จ่าย', to: '/cashbook', icon: Wallet },
-  { label: 'คำนวนรายได้', to: '/revenue', icon: Calculator },
-  { label: 'ตั้งค่า', to: '/settings', icon: Settings },
-]
+const navItems = computed(() => {
+  const items: { label: string; to: string; icon: Component }[] = [
+    { label: 'หน้าแรก', to: '/dashboard', icon: Home },
+    { label: 'เมนู', to: '/menu', icon: UtensilsCrossed },
+    { label: 'ชุดโปร', to: '/combos', icon: Layers },
+    { label: 'วัตถุดิบ', to: '/ingredients', icon: Leaf },
+    { label: 'บรรจุภัณฑ์', to: '/packaging', icon: Package },
+    { label: 'ซัพพลายเออร์', to: '/suppliers', icon: Truck },
+    { label: 'วางแผนซื้อ', to: '/planning', icon: ClipboardList },
+    { label: 'บันทึกยอดขาย', to: '/sales', icon: BarChart3 },
+    { label: 'รายรับ-จ่าย', to: '/cashbook', icon: Wallet },
+    { label: 'คำนวนรายได้', to: '/revenue', icon: Calculator },
+  ]
+  if (isAdmin.value) items.push({ label: 'ผู้ใช้', to: '/users', icon: Users })
+  items.push({ label: 'ตั้งค่า', to: '/settings', icon: Settings })
+  return items
+})
+
+const onStoreChange = async (event: Event) => {
+  const target = event.target
+  if (!(target instanceof HTMLSelectElement)) return
+  await selectStore(target.value)
+}
+
+const handleCreateStore = async () => {
+  creatingStore.value = true
+  createError.value = ''
+  try {
+    await createStore(newStoreName.value)
+    showCreateStore.value = false
+    newStoreName.value = ''
+    mobileOpen.value = false
+    router.push('/dashboard')
+  } catch (e: unknown) {
+    createError.value = e instanceof Error ? e.message : 'สร้างร้านไม่สำเร็จ'
+  } finally {
+    creatingStore.value = false
+  }
+}
 
 watch(
   () => route.fullPath,

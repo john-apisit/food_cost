@@ -3,6 +3,7 @@ import { supabase } from '@/config/supabase'
 import type { MenuFormPayload, MenuItem } from '@/types/models'
 import { mapMenuItem } from '@/types/mappers'
 import { useAuth } from './useAuth'
+import { useCurrentStore } from './useCurrentStore'
 
 const MENU_SELECT = `
   *,
@@ -28,9 +29,10 @@ const error = ref<string | null>(null)
 
 export function useMenu() {
   const { user } = useAuth()
+  const { currentStoreId } = useCurrentStore()
 
   const fetchMenuItems = async (includeInactive = false) => {
-    if (!user.value) return
+    if (!user.value || !currentStoreId.value) return
 
     loading.value = true
     error.value = null
@@ -39,7 +41,7 @@ export function useMenu() {
       let query = supabase
         .from('menu_items')
         .select(MENU_SELECT)
-        .eq('user_id', user.value.id)
+        .eq('store_id', currentStoreId.value)
         .order('name')
 
       if (!includeInactive) query = query.eq('is_active', true)
@@ -78,7 +80,7 @@ export function useMenu() {
   }
 
   const createMenuItem = async (menuItem: MenuFormPayload) => {
-    if (!user.value) return
+    if (!user.value || !currentStoreId.value) return
 
     loading.value = true
     error.value = null
@@ -88,6 +90,7 @@ export function useMenu() {
         .from('menu_items')
         .insert({
           user_id: user.value.id,
+          store_id: currentStoreId.value,
           name: menuItem.name,
           description: menuItem.description || null,
           sale_unit_type: menuItem.saleUnitType,

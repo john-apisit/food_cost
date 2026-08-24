@@ -3,6 +3,7 @@ import { supabase } from '@/config/supabase'
 import type { Combo, ComboFormPayload } from '@/types/models'
 import { mapCombo } from '@/types/mappers'
 import { useAuth } from './useAuth'
+import { useCurrentStore } from './useCurrentStore'
 
 const COMBO_SELECT = `
   *,
@@ -34,9 +35,10 @@ const error = ref<string | null>(null)
 
 export function useCombos() {
   const { user } = useAuth()
+  const { currentStoreId } = useCurrentStore()
 
   const fetchCombos = async () => {
-    if (!user.value) return
+    if (!user.value || !currentStoreId.value) return
     loading.value = true
     error.value = null
 
@@ -44,7 +46,7 @@ export function useCombos() {
       const { data, error: fetchError } = await supabase
         .from('combos')
         .select(COMBO_SELECT)
-        .eq('user_id', user.value.id)
+        .eq('store_id', currentStoreId.value)
         .eq('is_active', true)
         .order('name')
 
@@ -58,7 +60,7 @@ export function useCombos() {
   }
 
   const createCombo = async (payload: ComboFormPayload) => {
-    if (!user.value) return
+    if (!user.value || !currentStoreId.value) return
     loading.value = true
 
     try {
@@ -66,6 +68,7 @@ export function useCombos() {
         .from('combos')
         .insert({
           user_id: user.value.id,
+          store_id: currentStoreId.value,
           name: payload.name,
           description: payload.description || null,
           image_url: payload.imageUrl || null,

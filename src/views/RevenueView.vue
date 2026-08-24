@@ -171,8 +171,8 @@ import { computed, onMounted, reactive, ref, watch } from 'vue'
 import MainLayout from '@/layouts/MainLayout.vue'
 import EmptyState from '@/components/common/EmptyState.vue'
 import MenuImage from '@/components/menu/MenuImage.vue'
-import { useAuth } from '@/composables/useAuth'
 import { useCostBreakdown } from '@/composables/useCostBreakdown'
+import { useCurrentStore } from '@/composables/useCurrentStore'
 import { formatCurrency, formatNumber, saleUnitLabel } from '@/utils/format'
 import {
   forecastMenuRevenue,
@@ -186,7 +186,7 @@ import {
   saveRevenueQtyCache,
 } from '@/utils/revenueQtyCache'
 
-const { user } = useAuth()
+const { currentStoreId } = useCurrentStore()
 const { breakdowns, loading, loadAll, settings } = useCostBreakdown()
 const qtyByMenuId = reactive<Record<string, number>>({})
 const filterStatus = ref<'ready_to_sell' | ''>('ready_to_sell')
@@ -213,7 +213,7 @@ const rows = computed(() =>
 
 const summary = computed(() => summarizeRevenueForecast(rows.value))
 const hasQty = computed(() => Object.values(qtyByMenuId).some((qty) => qty > 0))
-const userId = computed(() => user.value?.id ?? '')
+const cacheKey = computed(() => currentStoreId.value ?? '')
 
 function replaceQty(next: Record<string, number>) {
   Object.keys(qtyByMenuId).forEach((id) => {
@@ -223,8 +223,8 @@ function replaceQty(next: Record<string, number>) {
 }
 
 function persistQty() {
-  if (!cacheReady.value || !userId.value) return
-  saveRevenueQtyCache(userId.value, { ...qtyByMenuId })
+  if (!cacheReady.value || !cacheKey.value) return
+  saveRevenueQtyCache(cacheKey.value, { ...qtyByMenuId })
 }
 
 function setQty(menuId: string, raw: string) {
@@ -252,14 +252,14 @@ function onQtyInput(menuId: string, event: Event) {
 
 function clearQty() {
   replaceQty({})
-  if (userId.value) clearRevenueQtyCache(userId.value)
+  if (cacheKey.value) clearRevenueQtyCache(cacheKey.value)
 }
 
 watch(qtyByMenuId, persistQty, { deep: true })
 
 onMounted(async () => {
   await loadAll()
-  if (userId.value) replaceQty(loadRevenueQtyCache(userId.value))
+  if (cacheKey.value) replaceQty(loadRevenueQtyCache(cacheKey.value))
   cacheReady.value = true
 })
 </script>

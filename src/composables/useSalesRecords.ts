@@ -3,6 +3,7 @@ import { supabase } from '@/config/supabase'
 import type { SalesRecord } from '@/types/models'
 import { mapSalesRecord } from '@/types/mappers'
 import { useAuth } from './useAuth'
+import { useCurrentStore } from './useCurrentStore'
 
 const records = ref<SalesRecord[]>([])
 const loading = ref(false)
@@ -15,15 +16,16 @@ type SalesRecordRange = {
 
 export function useSalesRecords() {
   const { user } = useAuth()
+  const { currentStoreId } = useCurrentStore()
   let lastRange: SalesRecordRange = {}
 
   const fetchLatestSaleDate = async (): Promise<string | null> => {
-    if (!user.value) return null
+    if (!user.value || !currentStoreId.value) return null
 
     const { data, error: fetchError } = await supabase
       .from('sales_records')
       .select('sale_date')
-      .eq('user_id', user.value.id)
+      .eq('store_id', currentStoreId.value)
       .order('sale_date', { ascending: false })
       .limit(1)
       .maybeSingle()
@@ -33,7 +35,7 @@ export function useSalesRecords() {
   }
 
   const fetchRecords = async (range: SalesRecordRange = lastRange) => {
-    if (!user.value) return
+    if (!user.value || !currentStoreId.value) return
     lastRange = range
     loading.value = true
     error.value = null
@@ -45,7 +47,7 @@ export function useSalesRecords() {
           *,
           menu_item:menu_items (*)
         `)
-        .eq('user_id', user.value.id)
+        .eq('store_id', currentStoreId.value)
 
       if (range.from) query = query.gte('sale_date', range.from)
       if (range.to) query = query.lte('sale_date', range.to)
@@ -73,13 +75,15 @@ export function useSalesRecords() {
       saleDate: string
     }>,
   ) => {
-    if (!user.value || payloads.length === 0) return
+    if (!user.value || !currentStoreId.value || payloads.length === 0) return
+    const storeId = currentStoreId.value
     loading.value = true
 
     try {
       const { error: insertError } = await supabase.from('sales_records').insert(
         payloads.map((payload) => ({
           user_id: user.value!.id,
+          store_id: storeId,
           menu_item_id: payload.menuItemId,
           actual_qty: payload.actualQty,
           target_qty: payload.targetQty ?? null,

@@ -5,6 +5,7 @@ import type { Database } from '@/types/database.types'
 import { mapIngredient, mapPriceHistory } from '@/types/mappers'
 import { STANDARD_PACKAGING } from '@/utils/packagingPresets'
 import { useAuth } from './useAuth'
+import { useCurrentStore } from './useCurrentStore'
 
 export const INGREDIENT_SELECT = '*, supplier:suppliers(*)'
 
@@ -14,9 +15,10 @@ const error = ref<string | null>(null)
 
 export function useIngredients() {
   const { user } = useAuth()
+  const { currentStoreId } = useCurrentStore()
 
   const fetchIngredients = async (includeInactive = false) => {
-    if (!user.value) return
+    if (!user.value || !currentStoreId.value) return
 
     loading.value = true
     error.value = null
@@ -25,7 +27,7 @@ export function useIngredients() {
       let query = supabase
         .from('ingredients')
         .select(INGREDIENT_SELECT)
-        .eq('user_id', user.value.id)
+        .eq('store_id', currentStoreId.value)
         .order('name')
 
       if (!includeInactive) {
@@ -64,7 +66,7 @@ export function useIngredients() {
     notes?: string
     isActive?: boolean
   }) => {
-    if (!user.value) return
+    if (!user.value || !currentStoreId.value) return
 
     loading.value = true
     error.value = null
@@ -74,6 +76,7 @@ export function useIngredients() {
         .from('ingredients')
         .insert({
           user_id: user.value.id,
+          store_id: currentStoreId.value,
           name: ingredient.name,
           unit: ingredient.unit,
           price_per_unit: ingredient.pricePerUnit,
@@ -157,12 +160,12 @@ export function useIngredients() {
   }
 
   const searchIngredients = async (searchTerm: string, type?: IngredientType) => {
-    if (!user.value) return []
+    if (!user.value || !currentStoreId.value) return []
 
     let query = supabase
       .from('ingredients')
       .select(INGREDIENT_SELECT)
-      .eq('user_id', user.value.id)
+      .eq('store_id', currentStoreId.value)
       .eq('is_active', true)
       .ilike('name', `%${searchTerm}%`)
       .order('name')
@@ -186,7 +189,7 @@ export function useIngredients() {
   }
 
   const seedStandardPackaging = async () => {
-    if (!user.value) return
+    if (!user.value || !currentStoreId.value) return
 
     await fetchIngredients()
     const existingNames = new Set(ingredients.value.filter((i) => i.type === 'packaging').map((i) => i.name))

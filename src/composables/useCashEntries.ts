@@ -5,6 +5,7 @@ import type { Database } from '@/types/database.types'
 import { mapCashEntry } from '@/types/mappers'
 import { estimatePlatformPayout, type PlatformPayoutEstimate } from '@/utils/cashbook'
 import { useAuth } from './useAuth'
+import { useCurrentStore } from './useCurrentStore'
 
 const entries = ref<CashEntry[]>([])
 const loading = ref(false)
@@ -19,9 +20,10 @@ const CASH_SELECT = `
 
 type CashRow = Database['public']['Tables']['cash_entries']['Insert']
 
-function toRow(userId: string, payload: CashEntryPayload): CashRow {
+function toRow(userId: string, storeId: string, payload: CashEntryPayload): CashRow {
   return {
     user_id: userId,
+    store_id: storeId,
     type: payload.type,
     category: payload.category,
     amount: payload.amount,
@@ -45,9 +47,10 @@ function toRow(userId: string, payload: CashEntryPayload): CashRow {
 
 export function useCashEntries() {
   const { user } = useAuth()
+  const { currentStoreId } = useCurrentStore()
 
   const fetchEntries = async (range: { from: string; to: string }) => {
-    if (!user.value) return
+    if (!user.value || !currentStoreId.value) return
     loading.value = true
     error.value = null
 
@@ -55,7 +58,7 @@ export function useCashEntries() {
       const { data, error: fetchError } = await supabase
         .from('cash_entries')
         .select(CASH_SELECT)
-        .eq('user_id', user.value.id)
+        .eq('store_id', currentStoreId.value)
         .gte('occurred_at', range.from)
         .lte('occurred_at', range.to)
         .order('occurred_at', { ascending: false })
@@ -72,13 +75,13 @@ export function useCashEntries() {
   }
 
   const createEntry = async (payload: CashEntryPayload) => {
-    if (!user.value) return
+    if (!user.value || !currentStoreId.value) return
     error.value = null
 
     try {
       const { data, error: insertError } = await supabase
         .from('cash_entries')
-        .insert(toRow(user.value.id, payload))
+        .insert(toRow(user.value.id, currentStoreId.value, payload))
         .select(CASH_SELECT)
         .single()
 
@@ -91,11 +94,11 @@ export function useCashEntries() {
   }
 
   const updateEntry = async (id: string, payload: CashEntryPayload) => {
-    if (!user.value) return
+    if (!user.value || !currentStoreId.value) return
     error.value = null
 
     try {
-      const { user_id: _userId, ...updates } = toRow(user.value.id, payload)
+      const { user_id: _userId, store_id: _storeId, ...updates } = toRow(user.value.id, currentStoreId.value, payload)
       const { data, error: updateError } = await supabase
         .from('cash_entries')
         .update(updates)
@@ -121,12 +124,12 @@ export function useCashEntries() {
     range: { from: string; to: string },
     platformFeePercent: number,
   ): Promise<PlatformPayoutEstimate> => {
-    if (!user.value) return { qty: 0, gross: 0, fee: 0, net: 0 }
+    if (!user.value || !currentStoreId.value) return { qty: 0, gross: 0, fee: 0, net: 0 }
 
     const { data, error: fetchError } = await supabase
       .from('sales_records')
       .select('actual_qty, menu_item:menu_items (selling_price)')
-      .eq('user_id', user.value.id)
+      .eq('store_id', currentStoreId.value)
       .gte('sale_date', range.from)
       .lte('sale_date', range.to)
 

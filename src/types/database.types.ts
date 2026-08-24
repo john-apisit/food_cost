@@ -12,7 +12,8 @@ export interface Database {
       store_settings: {
         Row: {
           id: string
-          user_id: string
+          user_id: string | null
+          store_id: string
           platform_name: string
           platform_fee_percent: number
           fixed_cost_box: number
@@ -34,7 +35,8 @@ export interface Database {
         }
         Insert: {
           id?: string
-          user_id: string
+          user_id: string | null
+          store_id: string
           platform_name?: string
           platform_fee_percent?: number
           fixed_cost_box?: number
@@ -56,7 +58,8 @@ export interface Database {
         }
         Update: {
           id?: string
-          user_id?: string
+          user_id?: string | null
+          store_id?: string
           platform_name?: string
           platform_fee_percent?: number
           fixed_cost_box?: number
@@ -81,7 +84,8 @@ export interface Database {
       suppliers: {
         Row: {
           id: string
-          user_id: string
+          user_id: string | null
+          store_id: string
           name: string
           notes: string | null
           is_active: boolean
@@ -90,7 +94,8 @@ export interface Database {
         }
         Insert: {
           id?: string
-          user_id: string
+          user_id: string | null
+          store_id: string
           name: string
           notes?: string | null
           is_active?: boolean
@@ -99,7 +104,8 @@ export interface Database {
         }
         Update: {
           id?: string
-          user_id?: string
+          user_id?: string | null
+          store_id?: string
           name?: string
           notes?: string | null
           is_active?: boolean
@@ -111,7 +117,8 @@ export interface Database {
       ingredients: {
         Row: {
           id: string
-          user_id: string
+          user_id: string | null
+          store_id: string
           name: string
           unit: string
           price_per_unit: number
@@ -125,7 +132,8 @@ export interface Database {
         }
         Insert: {
           id?: string
-          user_id: string
+          user_id: string | null
+          store_id: string
           name: string
           unit: string
           price_per_unit: number
@@ -139,7 +147,8 @@ export interface Database {
         }
         Update: {
           id?: string
-          user_id?: string
+          user_id?: string | null
+          store_id?: string
           name?: string
           unit?: string
           price_per_unit?: number
@@ -180,7 +189,8 @@ export interface Database {
       menu_items: {
         Row: {
           id: string
-          user_id: string
+          user_id: string | null
+          store_id: string
           name: string
           description: string | null
           sale_unit_type: 'box' | 'bag'
@@ -196,7 +206,8 @@ export interface Database {
         }
         Insert: {
           id?: string
-          user_id: string
+          user_id: string | null
+          store_id: string
           name: string
           description?: string | null
           sale_unit_type: 'box' | 'bag'
@@ -212,7 +223,8 @@ export interface Database {
         }
         Update: {
           id?: string
-          user_id?: string
+          user_id?: string | null
+          store_id?: string
           name?: string
           description?: string | null
           sale_unit_type?: 'box' | 'bag'
@@ -279,7 +291,8 @@ export interface Database {
       combos: {
         Row: {
           id: string
-          user_id: string
+          user_id: string | null
+          store_id: string
           name: string
           description: string | null
           image_url: string | null
@@ -292,7 +305,8 @@ export interface Database {
         }
         Insert: {
           id?: string
-          user_id: string
+          user_id: string | null
+          store_id: string
           name: string
           description?: string | null
           image_url?: string | null
@@ -305,7 +319,8 @@ export interface Database {
         }
         Update: {
           id?: string
-          user_id?: string
+          user_id?: string | null
+          store_id?: string
           name?: string
           description?: string | null
           image_url?: string | null
@@ -345,7 +360,8 @@ export interface Database {
       purchase_plans: {
         Row: {
           id: string
-          user_id: string
+          user_id: string | null
+          store_id: string
           name: string
           days: number
           purchase_date: string | null
@@ -358,7 +374,8 @@ export interface Database {
         }
         Insert: {
           id?: string
-          user_id: string
+          user_id: string | null
+          store_id: string
           name: string
           days?: number
           purchase_date?: string | null
@@ -371,7 +388,8 @@ export interface Database {
         }
         Update: {
           id?: string
-          user_id?: string
+          user_id?: string | null
+          store_id?: string
           name?: string
           days?: number
           purchase_date?: string | null
@@ -411,7 +429,8 @@ export interface Database {
       sales_records: {
         Row: {
           id: string
-          user_id: string
+          user_id: string | null
+          store_id: string
           plan_id: string | null
           menu_item_id: string
           target_qty: number | null
@@ -421,7 +440,8 @@ export interface Database {
         }
         Insert: {
           id?: string
-          user_id: string
+          user_id: string | null
+          store_id: string
           plan_id?: string | null
           menu_item_id: string
           target_qty?: number | null
@@ -431,7 +451,8 @@ export interface Database {
         }
         Update: {
           id?: string
-          user_id?: string
+          user_id?: string | null
+          store_id?: string
           plan_id?: string | null
           menu_item_id?: string
           target_qty?: number | null
@@ -444,7 +465,8 @@ export interface Database {
       cash_entries: {
         Row: {
           id: string
-          user_id: string
+          user_id: string | null
+          store_id: string
           type: 'income' | 'expense' | 'transfer'
           category: string
           amount: number
@@ -468,7 +490,8 @@ export interface Database {
         }
         Insert: {
           id?: string
-          user_id: string
+          user_id: string | null
+          store_id: string
           type: 'income' | 'expense' | 'transfer'
           category: string
           amount: number
@@ -492,7 +515,8 @@ export interface Database {
         }
         Update: {
           id?: string
-          user_id?: string
+          user_id?: string | null
+          store_id?: string
           type?: 'income' | 'expense' | 'transfer'
           category?: string
           amount?: number
@@ -516,9 +540,164 @@ export interface Database {
         }
         Relationships: []
       }
+      profiles: {
+        Row: {
+          id: string
+          email: string
+          display_name: string | null
+          last_store_id: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id: string
+          email?: string
+          display_name?: string | null
+          last_store_id?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          email?: string
+          display_name?: string | null
+          last_store_id?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      stores: {
+        Row: {
+          id: string
+          name: string
+          created_by: string
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          name?: string
+          created_by: string
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          name?: string
+          created_by?: string
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      store_members: {
+        Row: {
+          id: string
+          store_id: string
+          user_id: string
+          role: 'admin' | 'store_manager'
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          store_id: string
+          user_id: string
+          role: 'admin' | 'store_manager'
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          store_id?: string
+          user_id?: string
+          role?: 'admin' | 'store_manager'
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      role_permissions: {
+        Row: {
+          role: 'admin' | 'store_manager'
+          resource: string
+          action: 'view' | 'create' | 'edit' | 'delete'
+        }
+        Insert: {
+          role: 'admin' | 'store_manager'
+          resource: string
+          action: 'view' | 'create' | 'edit' | 'delete'
+        }
+        Update: {
+          role?: 'admin' | 'store_manager'
+          resource?: string
+          action?: 'view' | 'create' | 'edit' | 'delete'
+        }
+        Relationships: []
+      }
+      store_invites: {
+        Row: {
+          id: string
+          store_id: string
+          email: string
+          role: 'admin' | 'store_manager'
+          token: string
+          invited_by: string
+          status: 'pending' | 'accepted' | 'expired' | 'cancelled'
+          expires_at: string
+          accepted_at: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          store_id: string
+          email: string
+          role: 'admin' | 'store_manager'
+          token?: string
+          invited_by: string
+          status?: 'pending' | 'accepted' | 'expired' | 'cancelled'
+          expires_at?: string
+          accepted_at?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          store_id?: string
+          email?: string
+          role?: 'admin' | 'store_manager'
+          token?: string
+          invited_by?: string
+          status?: 'pending' | 'accepted' | 'expired' | 'cancelled'
+          expires_at?: string
+          accepted_at?: string | null
+          created_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: Record<string, never>
-    Functions: Record<string, never>
+    Functions: {
+      create_store: {
+        Args: { p_name?: string | null }
+        Returns: string
+      }
+      get_store_invite: {
+        Args: { p_token: string }
+        Returns: {
+          store_id: string
+          store_name: string
+          role: string
+          email: string
+          status: string
+          expires_at: string
+        }[]
+      }
+      accept_store_invite: {
+        Args: { p_token: string }
+        Returns: string
+      }
+    }
     Enums: Record<string, never>
     CompositeTypes: Record<string, never>
   }

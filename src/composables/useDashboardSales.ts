@@ -12,16 +12,18 @@ import {
   type SalesChartRangeDays,
 } from '@/utils/salesChart'
 import { useAuth } from './useAuth'
+import { useCurrentStore } from './useCurrentStore'
 
 export function useDashboardSales() {
   const { user } = useAuth()
+  const { currentStoreId } = useCurrentStore()
   const records = ref<SalesRecord[]>([])
   const loading = ref(false)
   const error = ref<string | null>(null)
   const rangeDays = ref<SalesChartRangeDays>(7)
 
   const fetchSales = async () => {
-    if (!user.value) return
+    if (!user.value || !currentStoreId.value) return
     loading.value = true
     error.value = null
     const { from, to } = salesChartRange(SALES_CHART_MAX_DAYS)
@@ -33,7 +35,7 @@ export function useDashboardSales() {
           *,
           menu_item:menu_items (*)
         `)
-        .eq('user_id', user.value.id)
+        .eq('store_id', currentStoreId.value)
         .gte('sale_date', from)
         .lte('sale_date', to)
         .order('sale_date', { ascending: true })

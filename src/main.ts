@@ -4,6 +4,7 @@ import router from './router'
 import App from './App.vue'
 import './assets/main.css'
 import { useAuth } from './composables/useAuth'
+import { initStoreContext } from './composables/useCurrentStore'
 
 const app = createApp(App)
 app.use(createPinia())
@@ -11,5 +12,6 @@ app.use(router)
 
 const { initAuth } = useAuth()
 initAuth().then(() => {
+  initStoreContext()
   app.mount('#app')
 })

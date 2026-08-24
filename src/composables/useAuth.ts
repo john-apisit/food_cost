@@ -56,17 +56,6 @@ export function useAuth() {
   const signUp = async (email: string, password: string) => {
     const { data, error } = await supabase.auth.signUp({ email, password })
     if (error) throw error
-
-    if (data.user) {
-      await supabase.from('store_settings').insert({
-        user_id: data.user.id,
-        platform_name: 'LINE MAN',
-        platform_fee_percent: 30,
-        fixed_cost_box: 5,
-        fixed_cost_bag: 3,
-      })
-    }
-
     return data
   }
 

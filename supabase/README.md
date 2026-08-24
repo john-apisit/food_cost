@@ -161,3 +161,28 @@ supabase gen types typescript --linked > src/types/database.types.ts
 - `config.toml` is safe to commit. Do not put secrets in it; use `env()` if needed.
 - `supabase/.temp/` and `supabase/.branches/` are CLI state and are gitignored.
 - `seed.sql` runs only on local `start` / `db reset`, not on `db push`.
+
+## Store membership and invite emails
+
+User management needs the store-membership migration **and** the `invite-member` Edge Function. Push both before using `/users` or invite links; the Vue app queries `store_id` / `store_members` which do not exist until `db push` succeeds.
+
+```bash
+supabase db push
+supabase functions deploy invite-member
+supabase secrets set APP_URL=https://your-app.example
+supabase secrets set RESEND_API_KEY=re_xxxxx
+supabase secrets set INVITE_FROM_EMAIL="Food Cost <noreply@your-domain.com>"
+```
+
+`APP_URL` is the public app origin used in invite emails (no trailing slash). Add that same origin under Authentication → URL Configuration → Redirect URLs.
+
+### `RESEND_API_KEY`
+
+This is an API key from [Resend](https://resend.com), the transactional email service used by `invite-member`. Supabase Auth can email **new** addresses (`inviteUserByEmail`). People who already have an account (for example a second-store invite) need Resend.
+
+1. Create an account at [resend.com](https://resend.com) (free tier is enough to start).
+2. Verify a sending domain under **Domains** (for example `your-domain.com`). Until then you can only send test mail to the Resend account owner.
+3. Open **API Keys** → **Create API Key** and copy the value. It starts with `re_`.
+4. Set the secrets above. `INVITE_FROM_EMAIL` must use that verified domain (or `beth.t@example.com` for sending only to the Resend account owner).
+
+Without `RESEND_API_KEY`, the function falls back to Supabase Auth invite for brand-new emails only. If Resend rejects a message, the function returns `email_error` and uses the same Auth fallback for new emails. Pending invites can also be copied from `/users`.
