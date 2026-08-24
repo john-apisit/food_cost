@@ -158,14 +158,12 @@ import {
 } from 'lucide-vue-next'
 import { useAuth } from '@/composables/useAuth'
 import { useCurrentStore } from '@/composables/useCurrentStore'
-import { usePermissions } from '@/composables/usePermissions'
 
 const router = useRouter()
 const route = useRoute()
 const slots = useSlots()
 const { signOut, user, displayName } = useAuth()
 const { memberships, currentStoreId, selectStore, createStore } = useCurrentStore()
-const { isAdmin } = usePermissions()
 const mobileOpen = ref(false)
 const showCreateStore = ref(false)
 const newStoreName = ref('')
@@ -187,9 +185,9 @@ const navItems = computed(() => {
     { label: 'บันทึกยอดขาย', to: '/sales', icon: BarChart3 },
     { label: 'รายรับ-จ่าย', to: '/cashbook', icon: Wallet },
     { label: 'คำนวนรายได้', to: '/revenue', icon: Calculator },
+    { label: 'ผู้ใช้', to: '/users', icon: Users },
+    { label: 'ตั้งค่า', to: '/settings', icon: Settings },
   ]
-  if (isAdmin.value) items.push({ label: 'ผู้ใช้', to: '/users', icon: Users })
-  items.push({ label: 'ตั้งค่า', to: '/settings', icon: Settings })
   return items
 })
 

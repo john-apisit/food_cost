@@ -144,6 +144,25 @@ export function useStoreMembers() {
     members.value = members.value.filter((item) => item.id !== memberId)
   }
 
+  const leaveCurrentStore = async () => {
+    const membership = currentMembership.value
+    if (!user.value || !membership) throw new Error('ยังไม่ได้เลือกร้าน')
+    if (membership.createdBy === user.value.id) {
+      throw new Error('เจ้าของร้านไม่สามารถออกจากร้านของตัวเองได้')
+    }
+
+    const { error: deleteError } = await supabase
+      .from('store_members')
+      .delete()
+      .eq('id', membership.id)
+      .eq('user_id', user.value.id)
+    if (deleteError) throw deleteError
+
+    members.value = []
+    invites.value = []
+    await loadMemberships()
+  }
+
   const cancelInvite = async (inviteId: string) => {
     const { error: updateError } = await supabase
       .from('store_invites')
@@ -174,6 +193,7 @@ export function useStoreMembers() {
     inviteMember,
     updateMemberRole,
     removeMember,
+    leaveCurrentStore,
     cancelInvite,
     acceptInvite,
   }

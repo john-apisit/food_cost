@@ -3,10 +3,14 @@
     <div class="max-w-3xl space-y-6">
       <div>
         <h1 class="page-title">ผู้ใช้</h1>
-        <p class="text-gray-500 mt-1">เชิญคนเข้ามาช่วยดูแลร้านนี้ และกำหนดสิทธิ์ตามบทบาท</p>
+        <p class="text-gray-500 mt-1">
+          {{ canManageUsers
+            ? 'เชิญคนเข้ามาช่วยดูแลร้านนี้ และกำหนดสิทธิ์ตามบทบาท'
+            : 'ดูสมาชิกในร้านนี้ และออกจากร้านที่คุณไม่ได้เป็นเจ้าของได้' }}
+        </p>
       </div>
 
-      <form class="card p-6 space-y-4" @submit.prevent="sendInvite">
+      <form v-if="canManageUsers" class="card p-6 space-y-4" @submit.prevent="sendInvite">
         <h2 class="font-semibold text-lg">เชิญสมาชิก</h2>
         <div class="grid sm:grid-cols-2 gap-4">
           <div>
@@ -44,11 +48,15 @@
         <ul v-else class="divide-y divide-gray-100">
           <li v-for="member in members" :key="member.id" class="py-3 flex flex-col sm:flex-row sm:items-center gap-3">
             <div class="min-w-0 flex-1">
-              <p class="font-medium truncate">{{ member.displayName || member.email || 'ไม่มีชื่อ' }}</p>
+              <p class="font-medium truncate">
+                {{ member.displayName || member.email || 'ไม่มีชื่อ' }}
+                <span v-if="member.userId === currentUserId" class="text-xs font-normal text-gray-500"> (คุณ)</span>
+              </p>
               <p class="text-sm text-gray-500 truncate">{{ member.email }}</p>
             </div>
             <div class="flex items-center gap-2">
               <select
+                v-if="canManageUsers"
                 class="input-field"
                 :value="member.role"
                 :disabled="member.isOwner || member.userId === currentUserId"
@@ -57,9 +65,19 @@
                 <option value="admin">{{ STORE_ROLE_LABELS.admin }}</option>
                 <option value="store_manager">{{ STORE_ROLE_LABELS.store_manager }}</option>
               </select>
+              <span v-else class="text-sm text-gray-600">{{ STORE_ROLE_LABELS[member.role] }}</span>
               <span v-if="member.isOwner" class="text-xs text-gray-500">เจ้าของร้าน</span>
               <button
-                v-else-if="member.userId !== currentUserId"
+                v-else-if="member.userId === currentUserId"
+                type="button"
+                class="btn-danger text-sm"
+                :disabled="leaving"
+                @click="onLeave"
+              >
+                {{ leaving ? 'กำลังออก...' : 'ออกจากร้าน' }}
+              </button>
+              <button
+                v-else-if="canManageUsers"
                 type="button"
                 class="btn-danger text-sm"
                 @click="onRemove(member.id)"
@@ -71,7 +89,7 @@
         </ul>
       </section>
 
-      <section v-if="invites.length" class="card p-6 space-y-3">
+      <section v-if="canManageUsers && invites.length" class="card p-6 space-y-3">
         <h2 class="font-semibold text-lg">คำเชิญที่รอตอบรับ</h2>
         <ul class="divide-y divide-gray-100">
           <li v-for="invite in invites" :key="invite.id" class="py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -93,13 +111,19 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
+import { useRouter } from 'vue-router'
 import MainLayout from '@/layouts/MainLayout.vue'
+import { useCurrentStore } from '@/composables/useCurrentStore'
+import { usePermissions } from '@/composables/usePermissions'
 import { useStoreMembers } from '@/composables/useStoreMembers'
 import { useToast } from '@/composables/useToast'
 import { STORE_ROLE_LABELS, isStoreRole, type StoreRole } from '@/utils/permissions'
 import { formatDate } from '@/utils/format'
 
+const router = useRouter()
+const { can } = usePermissions()
+const { currentStoreId, isStoreOwner } = useCurrentStore()
 const {
   members,
   invites,
@@ -110,13 +134,16 @@ const {
   inviteMember,
   updateMemberRole,
   removeMember,
+  leaveCurrentStore,
   cancelInvite,
 } = useStoreMembers()
 const { success, error } = useToast()
 
+const canManageUsers = computed(() => can('users', 'delete'))
 const inviteEmail = ref('')
 const inviteRole = ref<StoreRole>('store_manager')
 const inviting = ref(false)
+const leaving = ref(false)
 const inviteNotice = ref<{ message: string; url: string } | null>(null)
 
 const inviteUrl = (token: string) => `${window.location.origin}/invite/${token}`
@@ -177,6 +204,21 @@ const onRemove = async (memberId: string) => {
   }
 }
 
+const onLeave = async () => {
+  if (isStoreOwner.value) return
+  if (!confirm('ออกจากร้านนี้? คุณจะเข้าถึงข้อมูลร้านนี้ไม่ได้อีก จนกว่าจะถูกเชิญใหม่')) return
+  leaving.value = true
+  try {
+    await leaveCurrentStore()
+    success('ออกจากร้านแล้ว')
+    await router.replace(currentStoreId.value ? '/dashboard' : '/onboarding')
+  } catch (e: unknown) {
+    error(e instanceof Error ? e.message : 'ออกจากร้านไม่สำเร็จ')
+  } finally {
+    leaving.value = false
+  }
+}
+
 const onCancel = async (inviteId: string) => {
   try {
     await cancelInvite(inviteId)
@@ -187,6 +229,8 @@ const onCancel = async (inviteId: string) => {
 }
 
 onMounted(async () => {
-  await Promise.all([fetchMembers(), fetchInvites()])
+  const tasks = [fetchMembers()]
+  if (canManageUsers.value) tasks.push(fetchInvites())
+  await Promise.all(tasks)
 })
 </script>
