@@ -57,21 +57,26 @@
             </div>
           </div>
           <div>
-            <label class="block text-sm font-medium mb-1">รูปอาหาร (URL สาธารณะ)</label>
+            <label class="block text-sm font-medium mb-1">รูปอาหาร</label>
+            <ImageDropzone class="max-w-sm" aria-label="อัปโหลดรูปเมนู" @uploaded="form.imageUrl = $event" />
             <input
               v-model="form.imageUrl"
               type="url"
-              class="input-field w-full"
-              placeholder="https://example.com/pad-kra-pao.jpg"
+              class="input-field w-full mt-3"
+              placeholder="หรือวางลิงก์รูปสาธารณะ"
             />
-            <p class="text-xs text-gray-500 mt-1">วางลิงก์รูปที่เปิดได้โดยไม่ต้องล็อกอิน เช่น จาก CDN หรือ hosting</p>
-            <MenuImage
-              v-if="form.imageUrl"
-              class="mt-3 max-w-sm rounded-lg border border-gray-100"
-              :src="form.imageUrl"
-              :alt="form.name || 'ตัวอย่างรูปเมนู'"
-              wrapper-class="aspect-[4/3]"
-            />
+            <p class="text-xs text-gray-500 mt-1">อัปโหลดรูป หรือวางลิงก์ที่เปิดได้โดยไม่ต้องล็อกอิน</p>
+            <div v-if="form.imageUrl" class="mt-3 max-w-sm">
+              <MenuImage
+                class="rounded-lg border border-gray-100"
+                :src="form.imageUrl"
+                :alt="form.name || 'ตัวอย่างรูปเมนู'"
+                wrapper-class="aspect-[4/3]"
+              />
+              <button type="button" class="mt-2 text-sm text-red-600" @click="form.imageUrl = ''">
+                ลบรูป
+              </button>
+            </div>
           </div>
         </div>
 
@@ -236,6 +241,7 @@
 import { computed, nextTick, onMounted, reactive, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import MainLayout from '@/layouts/MainLayout.vue'
+import ImageDropzone from '@/components/common/ImageDropzone.vue'
 import MenuImage from '@/components/menu/MenuImage.vue'
 import { useIngredients } from '@/composables/useIngredients'
 import { useMenu } from '@/composables/useMenu'

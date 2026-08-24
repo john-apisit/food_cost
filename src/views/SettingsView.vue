@@ -49,34 +49,46 @@
 
           <div class="grid sm:grid-cols-2 gap-4">
             <div>
-              <label class="block text-sm font-medium mb-1">Logo (URL)</label>
+              <label class="block text-sm font-medium mb-1">Logo</label>
+              <ImageDropzone aria-label="อัปโหลดโลโก้" @uploaded="form.logoUrl = $event" />
               <input
                 v-model="form.logoUrl"
                 type="url"
-                class="input-field w-full"
-                placeholder="https://example.com/logo.png"
+                class="input-field w-full mt-3"
+                placeholder="หรือวางลิงก์รูปสาธารณะ"
               />
-              <img
-                v-if="form.logoUrl"
-                :src="form.logoUrl"
-                alt="ตัวอย่างโลโก้"
-                class="mt-3 h-24 w-24 rounded-lg border border-gray-100 object-contain bg-white"
-              />
+              <p class="text-xs text-gray-500 mt-1">อัปโหลดรูป หรือวางลิงก์ที่เปิดได้โดยไม่ต้องล็อกอิน</p>
+              <div v-if="form.logoUrl" class="mt-3">
+                <img
+                  :src="form.logoUrl"
+                  alt="ตัวอย่างโลโก้"
+                  class="h-24 w-24 rounded-lg border border-gray-100 object-contain bg-white"
+                />
+                <button type="button" class="mt-2 text-sm text-red-600" @click="form.logoUrl = ''">
+                  ลบรูป
+                </button>
+              </div>
             </div>
             <div>
-              <label class="block text-sm font-medium mb-1">Banner (URL)</label>
+              <label class="block text-sm font-medium mb-1">Banner</label>
+              <ImageDropzone aria-label="อัปโหลดแบนเนอร์" @uploaded="form.bannerUrl = $event" />
               <input
                 v-model="form.bannerUrl"
                 type="url"
-                class="input-field w-full"
-                placeholder="https://example.com/banner.jpg"
+                class="input-field w-full mt-3"
+                placeholder="หรือวางลิงก์รูปสาธารณะ"
               />
-              <img
-                v-if="form.bannerUrl"
-                :src="form.bannerUrl"
-                alt="ตัวอย่างแบนเนอร์"
-                class="mt-3 h-24 w-full rounded-lg border border-gray-100 object-cover bg-gray-50"
-              />
+              <p class="text-xs text-gray-500 mt-1">อัปโหลดรูป หรือวางลิงก์ที่เปิดได้โดยไม่ต้องล็อกอิน</p>
+              <div v-if="form.bannerUrl" class="mt-3">
+                <img
+                  :src="form.bannerUrl"
+                  alt="ตัวอย่างแบนเนอร์"
+                  class="h-24 w-full rounded-lg border border-gray-100 object-cover bg-gray-50"
+                />
+                <button type="button" class="mt-2 text-sm text-red-600" @click="form.bannerUrl = ''">
+                  ลบรูป
+                </button>
+              </div>
             </div>
           </div>
 
@@ -196,6 +208,7 @@
 import { onMounted, reactive, ref, watch } from 'vue'
 import { Moon, Sun } from 'lucide-vue-next'
 import MainLayout from '@/layouts/MainLayout.vue'
+import ImageDropzone from '@/components/common/ImageDropzone.vue'
 import { useStoreSettings } from '@/composables/useStoreSettings'
 import { useTheme, type Theme } from '@/composables/useTheme'
 import { useToast } from '@/composables/useToast'
