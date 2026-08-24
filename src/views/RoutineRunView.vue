@@ -154,13 +154,22 @@
             ที่ยังไม่เช็คเป็นพอใช้
           </button>
           <button
-            v-if="run"
+            v-if="routine.kind === 'stock_check' && run"
             type="button"
-            class="btn-primary"
+            class="btn-secondary"
             :disabled="busy || run.status === 'skipped'"
             @click="complete"
           >
             {{ completeLabel }}
+          </button>
+          <button
+            v-if="run"
+            type="button"
+            class="btn-primary"
+            :disabled="busy || run.status === 'skipped'"
+            @click="routine.kind === 'stock_check' ? saveOnly() : complete()"
+          >
+            {{ routine.kind === 'stock_check' ? 'บันทึก' : completeLabel }}
           </button>
         </div>
       </div>
@@ -351,6 +360,19 @@ const skip = async () => {
     success('ข้ามงานวันนี้แล้ว')
   } catch (e: unknown) {
     error(e instanceof Error ? e.message : 'ข้ามไม่สำเร็จ')
+  } finally {
+    busy.value = false
+  }
+}
+
+const saveOnly = async () => {
+  if (!run.value) return
+  busy.value = true
+  try {
+    await setRunStatus(run.value.id, 'done')
+    success('บันทึกแล้ว')
+  } catch (e: unknown) {
+    error(e instanceof Error ? e.message : 'บันทึกไม่สำเร็จ')
   } finally {
     busy.value = false
   }
