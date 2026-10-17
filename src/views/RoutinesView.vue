@@ -86,7 +86,7 @@
               </p>
               <p class="text-sm text-gray-500">
                 {{ ROUTINE_KIND_LABELS[routine.kind] }} ·
-                {{ routine.days.map((day) => WEEKDAY_LABELS[day]).join(' ') }} ·
+                {{ formatRoutineDays(routine.days) }} ·
                 {{ formatTimeRange(routine.startTime, routine.endTime) }}
               </p>
             </div>
@@ -122,7 +122,6 @@ import { useToast } from '@/composables/useToast'
 import {
   ROUTINE_KIND_LABELS,
   ROUTINE_WINDOW_STATUS_LABELS,
-  WEEKDAY_LABELS,
   type Routine,
   type RoutinePayload,
   type RoutineWindowStatus,
@@ -130,6 +129,7 @@ import {
 import { formatWeekdayDate, toDateInputValue } from '@/utils/format'
 import {
   currentTimeHm,
+  formatRoutineDays,
   formatTimeRange,
   isRoutineScheduledOn,
   routineWindowStatus,

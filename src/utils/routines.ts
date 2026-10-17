@@ -2,6 +2,7 @@ import { uniquePrepSteps } from '@/composables/usePurchasePlanning'
 import {
   INGREDIENT_CATEGORIES,
   WEEKDAYS,
+  WEEKDAY_LABELS,
   isOtherIngredientCategory,
   type Ingredient,
   type MenuItem,
@@ -43,6 +44,10 @@ export function normalizeTime(value: string): string {
 
 export function formatTimeRange(start: string, end: string): string {
   return `${normalizeTime(start)}–${normalizeTime(end)}`
+}
+
+export function formatRoutineDays(days: readonly Weekday[]): string {
+  return days.map((d) => WEEKDAY_LABELS[d]).join(' ')
 }
 
 export function weekdayFromDate(iso: string, fallback = new Date()): Weekday {

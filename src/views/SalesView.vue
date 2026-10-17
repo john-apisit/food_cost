@@ -139,6 +139,64 @@
         </button>
       </form>
 
+      <div v-if="records.length" class="space-y-2">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div class="card p-5">
+            <h3 class="text-gray-500 text-sm font-medium">รายได้</h3>
+            <p class="text-2xl font-bold mt-2">{{ formatCurrency(summary.revenue) }}</p>
+            <p class="text-xs text-gray-500 mt-1">
+              ขายได้ {{ formatNumber(summary.actualQty, 0) }} ชิ้น
+              <template v-if="summary.dayCount > 1">
+                · เฉลี่ย {{ formatCurrency(summary.revenuePerDay) }}/วัน
+              </template>
+            </p>
+          </div>
+          <div class="card p-5">
+            <h3 class="text-gray-500 text-sm font-medium">กำไรสุทธิ</h3>
+            <p class="text-2xl font-bold mt-2" :class="profitClass(summary.profit, summary.marginPercent !== null)">
+              {{ summary.marginPercent === null ? '—' : formatCurrency(summary.profit) }}
+            </p>
+            <p class="text-xs text-gray-500 mt-1">
+              <template v-if="summary.marginPercent !== null">
+                กำไร {{ formatNumber(summary.marginPercent, 1) }}% ·
+                ต้นทุน {{ formatCurrency(summary.cost) }} ·
+                ค่าแพลตฟอร์ม {{ formatCurrency(summary.platformFee) }}
+              </template>
+              <template v-else>ยังไม่มีข้อมูลต้นทุน</template>
+            </p>
+          </div>
+          <div class="card p-5">
+            <h3 class="text-gray-500 text-sm font-medium">เทียบเป้า</h3>
+            <p class="text-2xl font-bold mt-2" :class="targetPercentClass">
+              {{ summary.targetPercent === null ? '—' : `${formatNumber(summary.targetPercent, 0)}%` }}
+            </p>
+            <p class="text-xs text-gray-500 mt-1">
+              <template v-if="summary.hasTarget">
+                จริง {{ formatNumber(summary.targetedActualQty, 0) }} / เป้า {{ formatNumber(summary.targetQty, 0) }} ชิ้น
+              </template>
+              <template v-else>ยังไม่มีเป้าในรายการเหล่านี้</template>
+            </p>
+          </div>
+          <div class="card p-5">
+            <h3 class="text-gray-500 text-sm font-medium">เมนูทำกำไรสูงสุด</h3>
+            <p class="text-2xl font-bold mt-2 truncate" :title="summary.topProfitMenuName ?? undefined">
+              {{ summary.topProfitMenuName ?? '—' }}
+            </p>
+            <p class="text-xs text-gray-500 mt-1">
+              {{ summary.topProfitMenuName ? `กำไร ${formatCurrency(summary.topProfitMenuProfit)}` : 'ยังไม่มีเมนูที่มีกำไร' }}
+            </p>
+          </div>
+        </div>
+        <p v-if="summary.estimatedCount > 0 || summary.unknownCostCount > 0" class="text-xs text-gray-500">
+          <template v-if="summary.estimatedCount > 0">
+            ~ {{ summary.estimatedCount }} รายการเป็นรายการเก่าที่ไม่ได้บันทึกต้นทุนไว้ ใช้ต้นทุนปัจจุบันประมาณการ
+          </template>
+          <template v-if="summary.unknownCostCount > 0">
+            · {{ summary.unknownCostCount }} รายการหาต้นทุนไม่ได้ (เมนูถูกลบหรือยังโหลดไม่เสร็จ) จึงไม่รวมในกำไร
+          </template>
+        </p>
+      </div>
+
       <div class="card">
         <div class="flex flex-col gap-3 px-4 py-3 sm:flex-row sm:items-end sm:justify-between">
           <div>
@@ -175,6 +233,7 @@
                 <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">จริง</th>
                 <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">ผลต่าง</th>
                 <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">รายได้</th>
+                <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">กำไร</th>
                 <th class="px-4 py-3"></th>
               </tr>
             </thead>
@@ -195,10 +254,38 @@
                 </td>
                 <td class="px-4 py-3 text-right">{{ formatCurrency(recordRevenue(row)) }}</td>
                 <td class="px-4 py-3 text-right">
+                  <template v-if="rowProfit(row)">
+                    <p
+                      class="font-medium"
+                      :class="profitClass(rowProfit(row)!.profit, true)"
+                      :title="rowProfit(row)!.estimated ? 'ประมาณการจากต้นทุนปัจจุบัน' : undefined"
+                    >
+                      {{ rowProfit(row)!.estimated ? '~' : '' }}{{ formatCurrency(rowProfit(row)!.profit) }}
+                    </p>
+                    <p v-if="rowProfit(row)!.marginPercent !== null" class="text-xs text-gray-500">
+                      {{ formatNumber(rowProfit(row)!.marginPercent!, 1) }}%
+                    </p>
+                  </template>
+                  <span v-else class="text-gray-400">-</span>
+                </td>
+                <td class="px-4 py-3 text-right">
                   <button type="button" class="text-red-600 text-sm" @click="remove(row.id)">ลบ</button>
                 </td>
               </tr>
             </tbody>
+            <tfoot v-if="records.length" class="bg-gray-50 font-medium">
+              <tr>
+                <td class="px-4 py-3" colspan="3">รวม {{ summary.recordCount }} รายการ</td>
+                <td class="px-4 py-3 text-right">{{ summary.hasTarget ? formatNumber(summary.targetQty, 0) : '-' }}</td>
+                <td class="px-4 py-3 text-right">{{ formatNumber(summary.actualQty, 0) }}</td>
+                <td class="px-4 py-3 text-right" :class="totalVarianceClass">{{ totalVariance }}</td>
+                <td class="px-4 py-3 text-right">{{ formatCurrency(summary.revenue) }}</td>
+                <td class="px-4 py-3 text-right" :class="profitClass(summary.profit, summary.marginPercent !== null)">
+                  {{ summary.marginPercent === null ? '-' : formatCurrency(summary.profit) }}
+                </td>
+                <td class="px-4 py-3"></td>
+              </tr>
+            </tfoot>
           </table>
         </div>
         <EmptyState
@@ -217,18 +304,25 @@ import MainLayout from '@/layouts/MainLayout.vue'
 import DatePicker from '@/components/common/DatePicker.vue'
 import EmptyState from '@/components/common/EmptyState.vue'
 import { usePurchasePlans } from '@/composables/usePurchasePlans'
+import { useCostBreakdown } from '@/composables/useCostBreakdown'
 import { useSalesRecords } from '@/composables/useSalesRecords'
 import { useToast } from '@/composables/useToast'
 import {
   formatCurrency,
   formatDateOnly,
+  formatNumber,
   formatSaleDateRange,
   normalizeDateRange,
   saleUnitLabel,
   toDateInputValue,
 } from '@/utils/format'
-import { recordRevenue } from '@/utils/salesChart'
+import { recordRevenue, shiftIsoDate } from '@/utils/salesChart'
 import { resolvePromo, salesRevenue } from '@/utils/salesPromo'
+import {
+  recordProfit,
+  summarizeProfit,
+  type CostFallback,
+} from '@/utils/salesProfit'
 import type { PurchasePlan, SalesRecord } from '@/types/models'
 
 type SaleEntry = {
@@ -249,11 +343,52 @@ const { plans, fetchPlans } = usePurchasePlans()
 const { records, loading, fetchLatestSaleDate, fetchRecords, createRecords, deleteRecord } =
   useSalesRecords()
 const { success, error } = useToast()
+const { breakdowns, settings, loadAll: loadCostData } = useCostBreakdown()
+
+const breakdownByMenuId = computed(
+  () => new Map(breakdowns.value.map((breakdown) => [breakdown.menuItem.id, breakdown])),
+)
+
+// Live cost, used when saving (snapshot) and for records saved before snapshots existed.
+const liveCostFor = (menuItemId: string): CostFallback | undefined => {
+  const breakdown = breakdownByMenuId.value.get(menuItemId)
+  if (!breakdown || !settings.value) return undefined
+  return { unitCost: breakdown.totalCost, platformFeePercent: settings.value.platformFeePercent }
+}
+
+const rowProfit = (row: SalesRecord) => recordProfit(row, liveCostFor(row.menuItemId))
+
+const summary = computed(() => summarizeProfit(records.value, (row) => liveCostFor(row.menuItemId)))
+
+const profitClass = (value: number, known: boolean) => {
+  if (!known) return 'text-gray-400'
+  return value < 0 ? 'text-red-600' : 'text-green-600'
+}
+
+const targetPercentClass = computed(() => {
+  const percent = summary.value.targetPercent
+  if (percent === null) return 'text-gray-400'
+  return percent < 100 ? 'text-red-600' : 'text-green-600'
+})
+
+const totalVariance = computed(() => {
+  if (!summary.value.hasTarget) return '-'
+  const diff = summary.value.targetedActualQty - summary.value.targetQty
+  return diff > 0 ? `+${diff}` : String(diff)
+})
+
+const totalVarianceClass = computed(() => {
+  if (!summary.value.hasTarget) return 'text-gray-500'
+  return summary.value.targetedActualQty < summary.value.targetQty ? 'text-red-600' : 'text-green-600'
+})
 
 const selectedPlanId = ref('')
 const saleDate = ref(toDateInputValue())
 const entries = ref<SaleEntry[]>([])
-const filterFrom = ref(toDateInputValue())
+// Default view: the last 7 days including today
+const DEFAULT_FILTER_DAYS = 7
+const defaultFilterFrom = (today: string) => shiftIsoDate(today, -(DEFAULT_FILTER_DAYS - 1))
+const filterFrom = ref(defaultFilterFrom(toDateInputValue()))
 const filterTo = ref(toDateInputValue())
 const latestSaleDate = ref('')
 const applyingPreset = ref(false)
@@ -398,12 +533,15 @@ const resetForm = () => {
 
 const save = async () => {
   if (!canSave.value || !selectedPlanId.value) return
-  const savedSaleDate = saleDate.value
   try {
     await createRecords(
       entries.value.map((entry) => {
         const promo = entryPromo(entry)
+        const liveCost = liveCostFor(entry.menuItemId)
         return {
+          unitPrice: entry.sellingPrice,
+          unitCost: liveCost?.unitCost ?? null,
+          platformFeePercent: liveCost?.platformFeePercent ?? null,
           saleDate: saleDate.value,
           menuItemId: entry.menuItemId,
           actualQty: Number(entry.actualQty),
@@ -418,15 +556,8 @@ const save = async () => {
     success('บันทึกยอดขายแล้ว')
     resetForm()
     await refreshLatestSaleDate()
-    applyingPreset.value = true
-    try {
-      hasCustomRange.value = savedSaleDate !== latestSaleDate.value
-      filterFrom.value = savedSaleDate
-      filterTo.value = savedSaleDate
-      await fetchRecords({ from: savedSaleDate, to: savedSaleDate })
-    } finally {
-      applyingPreset.value = false
-    }
+    // Keep the date filter the user had; just reload the list for that same range.
+    await fetchRecords(normalizeDateRange(filterFrom.value, filterTo.value) ?? undefined)
   } catch (e: unknown) {
     error(e instanceof Error ? e.message : 'บันทึกไม่สำเร็จ')
   }
@@ -457,10 +588,10 @@ const applyDateRange = async (from: string, to: string, custom: boolean) => {
   }
 }
 
-const showToday = async () => {
+const showRecentDays = async () => {
   const today = toDateInputValue()
   await refreshLatestSaleDate()
-  await applyDateRange(today, today, today !== latestSaleDate.value)
+  await applyDateRange(defaultFilterFrom(today), today, true)
 }
 
 const showLatestDay = async () => {
@@ -490,7 +621,7 @@ watch([filterFrom, filterTo], async ([from, to]) => {
 })
 
 onMounted(async () => {
-  await fetchPlans()
-  await showToday()
+  await Promise.all([fetchPlans(), loadCostData()])
+  await showRecentDays()
 })
 </script>

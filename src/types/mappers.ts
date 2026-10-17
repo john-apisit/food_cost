@@ -399,6 +399,10 @@ export function mapSalesRecord(row: Record<string, unknown>): SalesRecord {
     promoQty: num(row.promo_qty),
     promoRevenue: num(row.promo_revenue),
     promoNote: optStr(row.promo_note),
+    unitPrice: row.unit_price == null ? undefined : num(row.unit_price),
+    unitCost: row.unit_cost == null ? undefined : num(row.unit_cost),
+    platformFeePercent:
+      row.platform_fee_percent == null ? undefined : num(row.platform_fee_percent),
     saleDate: optDate(row.sale_date) ?? String(row.recorded_at).slice(0, 10),
     recordedAt: String(row.recorded_at),
     menuItem: menuRaw ? mapMenuItem(menuRaw, false) : undefined,

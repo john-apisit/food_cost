@@ -76,6 +76,9 @@ export function useSalesRecords() {
       promoQty?: number
       promoRevenue?: number
       promoNote?: string | null
+      unitPrice?: number | null
+      unitCost?: number | null
+      platformFeePercent?: number | null
     }>,
   ) => {
     if (!user.value || !currentStoreId.value || payloads.length === 0) return
@@ -94,6 +97,9 @@ export function useSalesRecords() {
           promo_qty: payload.promoQty ?? 0,
           promo_revenue: payload.promoQty ? (payload.promoRevenue ?? 0) : 0,
           promo_note: payload.promoQty ? (payload.promoNote ?? null) : null,
+          unit_price: payload.unitPrice ?? null,
+          unit_cost: payload.unitCost ?? null,
+          platform_fee_percent: payload.platformFeePercent ?? null,
           sale_date: payload.saleDate,
         })),
       )

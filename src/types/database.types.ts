@@ -438,6 +438,9 @@ export interface Database {
           promo_qty: number
           promo_revenue: number
           promo_note: string | null
+          unit_price: number | null
+          unit_cost: number | null
+          platform_fee_percent: number | null
           sale_date: string
           recorded_at: string
         }
@@ -452,6 +455,9 @@ export interface Database {
           promo_qty?: number
           promo_revenue?: number
           promo_note?: string | null
+          unit_price?: number | null
+          unit_cost?: number | null
+          platform_fee_percent?: number | null
           sale_date?: string
           recorded_at?: string
         }
@@ -466,6 +472,9 @@ export interface Database {
           promo_qty?: number
           promo_revenue?: number
           promo_note?: string | null
+          unit_price?: number | null
+          unit_cost?: number | null
+          platform_fee_percent?: number | null
           sale_date?: string
           recorded_at?: string
         }

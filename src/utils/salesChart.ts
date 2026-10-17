@@ -83,7 +83,7 @@ export function formatChartBaht(amount: number): string {
 }
 
 export function recordUnitPrice(record: SalesRecord): number {
-  return record.menuItem?.sellingPrice ?? 0
+  return record.unitPrice ?? record.menuItem?.sellingPrice ?? 0
 }
 
 export function recordRevenue(record: SalesRecord): number {

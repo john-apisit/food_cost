@@ -427,6 +427,10 @@ export interface SalesRecord {
   /** Total money received for the promo pieces. */
   promoRevenue: number
   promoNote?: string
+  /** Snapshots taken when the sale was recorded; undefined for older records. */
+  unitPrice?: number
+  unitCost?: number
+  platformFeePercent?: number
   saleDate: string
   recordedAt: string
   menuItem?: MenuItem

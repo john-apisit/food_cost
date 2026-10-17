@@ -9,7 +9,7 @@
       <router-link to="/routines" class="text-sm font-medium text-primary-600">← งานประจำวัน</router-link>
       <EmptyState
         :title="`${routine.name} ไม่ได้ตั้งไว้วันนี้`"
-        :description="`${routine.days.map((day) => WEEKDAY_LABELS[day]).join(' ')} · ${formatTimeRange(routine.startTime, routine.endTime)}`"
+        :description="`${formatRoutineDays(routine.days)} · ${formatTimeRange(routine.startTime, routine.endTime)}`"
       />
     </div>
 
@@ -191,12 +191,12 @@ import {
   ROUTINE_WINDOW_STATUS_LABELS,
   STOCK_STATUS_LABELS,
   STOCK_STATUSES,
-  WEEKDAY_LABELS,
   type StockStatus,
 } from '@/types/models'
 import { formatWeekdayDate, toDateInputValue } from '@/utils/format'
 import {
   currentTimeHm,
+  formatRoutineDays,
   formatTimeRange,
   isRoutineScheduledOn,
   restockFromRunItems,
