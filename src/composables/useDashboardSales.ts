@@ -9,14 +9,26 @@ import {
   recordsInRange,
   salesChartRange,
   summarizeSales,
+  type ProfitContext,
   type SalesChartRangeDays,
 } from '@/utils/salesChart'
 import { useAuth } from './useAuth'
+import { useCostBreakdown } from './useCostBreakdown'
 import { useCurrentStore } from './useCurrentStore'
 
 export function useDashboardSales() {
   const { user } = useAuth()
   const { currentStoreId } = useCurrentStore()
+  // Menu / ingredient / settings state is shared and loaded by the dashboard itself.
+  const { breakdowns, settings } = useCostBreakdown()
+
+  const profitContext = computed<ProfitContext | undefined>(() => {
+    if (!settings.value) return undefined
+    return {
+      unitCostByMenuId: new Map(breakdowns.value.map((b) => [b.menuItem.id, b.totalCost])),
+      platformFeePercent: settings.value.platformFeePercent,
+    }
+  })
   const records = ref<SalesRecord[]>([])
   const loading = ref(false)
   const error = ref<string | null>(null)
@@ -54,7 +66,12 @@ export function useDashboardSales() {
     recordsInRange(records.value, period.value.from, period.value.to),
   )
   const daily = computed(() =>
-    aggregateDailySales(periodRecords.value, period.value.from, period.value.to),
+    aggregateDailySales(
+      periodRecords.value,
+      period.value.from,
+      period.value.to,
+      profitContext.value,
+    ),
   )
   const topMenus = computed(() => aggregateTopMenus(periodRecords.value, 8))
   const summary = computed(() => summarizeSales(periodRecords.value))

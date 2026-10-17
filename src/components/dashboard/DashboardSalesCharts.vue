@@ -80,7 +80,10 @@
 
       <template v-else>
         <div class="card p-5">
-          <h3 class="font-semibold mb-3">รายได้รายวัน</h3>
+          <h3 class="font-semibold">รายได้รายวัน</h3>
+          <p class="text-xs text-gray-500 mb-3">
+            กำไร (เส้นเขียว) = รายได้ − ค่าธรรมเนียมแพลตฟอร์ม − ต้นทุนต่อชิ้น × จำนวนที่ขาย
+          </p>
           <VueApexCharts
             :key="`trend-${rangeDays}-${theme}`"
             type="area"
@@ -131,6 +134,7 @@ import { SALES_CHART_PRESETS, formatChartBaht } from '@/utils/salesChart'
 
 const CHART_FONT = 'IBM Plex Sans Thai, Noto Sans Thai, ui-sans-serif, system-ui, sans-serif'
 const PRIMARY = '#e68900'
+const PROFIT = '#16a34a'
 const TARGET_LIGHT = '#9ca3af'
 const TARGET_DARK = '#6b7280'
 
@@ -201,16 +205,25 @@ const baseChart = (): ApexOptions['chart'] => ({
 
 const trendSeries = computed(() => [
   { name: 'รายได้', data: daily.value.map((point) => point.revenue) },
+  { name: 'กำไร', data: daily.value.map((point) => point.profit) },
 ])
+
+const trendHasLoss = computed(() => daily.value.some((point) => point.profit < 0))
 
 const trendOptions = computed<ApexOptions>(() => ({
   chart: { ...baseChart(), type: 'area' },
-  colors: [PRIMARY],
+  colors: [PRIMARY, PROFIT],
   dataLabels: { enabled: false },
-  stroke: { curve: 'smooth', width: 3 },
+  stroke: { curve: 'straight', width: 3 },
+  legend: {
+    position: 'top',
+    horizontalAlign: 'right',
+    fontFamily: CHART_FONT,
+    labels: { colors: chartPalette.value.labelStrong },
+  },
   fill: {
     type: 'gradient',
-    gradient: { shadeIntensity: 1, opacityFrom: 0.4, opacityTo: 0.05, stops: [0, 100] },
+    gradient: { shadeIntensity: 1, opacityFrom: 0.3, opacityTo: 0.03, stops: [0, 100] },
   },
   grid: { borderColor: chartPalette.value.grid, strokeDashArray: 4, padding: { left: 8, right: 8 } },
   xaxis: {
@@ -224,7 +237,8 @@ const trendOptions = computed<ApexOptions>(() => ({
     axisTicks: { color: chartPalette.value.axis },
   },
   yaxis: {
-    min: 0,
+    // Profit can dip below zero on a bad day, so only pin the floor when it can't.
+    min: trendHasLoss.value ? undefined : 0,
     labels: {
       formatter: (value) => formatChartBaht(value),
       style: { colors: chartPalette.value.label, fontSize: '12px' },

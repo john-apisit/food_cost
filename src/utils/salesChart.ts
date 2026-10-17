@@ -13,6 +13,8 @@ export interface DailySalesPoint {
   targetQty: number
   revenue: number
   targetRevenue: number
+  /** Net profit for the day; 0 when no cost data was supplied. */
+  profit: number
 }
 
 export interface TopMenuPoint {
@@ -97,10 +99,25 @@ export function recordTargetRevenue(record: SalesRecord): number {
   return (record.targetQty ?? 0) * recordUnitPrice(record)
 }
 
+export interface ProfitContext {
+  /** Full cost of one unit per menu item id (ingredients + packaging + fixed cost). */
+  unitCostByMenuId: Map<string, number>
+  platformFeePercent: number
+}
+
+/** Revenue − platform fee on that revenue − unit cost × pieces sold. */
+export function recordProfit(record: SalesRecord, context: ProfitContext): number {
+  const revenue = recordRevenue(record)
+  const fee = revenue * (Math.max(0, context.platformFeePercent) / 100)
+  const cost = (context.unitCostByMenuId.get(record.menuItemId) ?? 0) * Math.max(0, record.actualQty)
+  return revenue - fee - cost
+}
+
 export function aggregateDailySales(
   records: SalesRecord[],
   from: string,
   to: string,
+  profitContext?: ProfitContext,
 ): DailySalesPoint[] {
   const byDate = new Map<string, Omit<DailySalesPoint, 'date' | 'label'>>()
 
@@ -111,11 +128,13 @@ export function aggregateDailySales(
       targetQty: 0,
       revenue: 0,
       targetRevenue: 0,
+      profit: 0,
     }
     current.actualQty += record.actualQty
     current.targetQty += record.targetQty ?? 0
     current.revenue += recordRevenue(record)
     current.targetRevenue += recordTargetRevenue(record)
+    if (profitContext) current.profit += recordProfit(record, profitContext)
     byDate.set(record.saleDate, current)
   }
 
@@ -125,6 +144,7 @@ export function aggregateDailySales(
       targetQty: 0,
       revenue: 0,
       targetRevenue: 0,
+      profit: 0,
     }
     return {
       date,

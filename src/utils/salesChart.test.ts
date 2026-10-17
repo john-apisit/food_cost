@@ -114,6 +114,25 @@ describe('aggregateDailySales', () => {
       revenue: 320,
     })
   })
+
+  it('computes daily profit after platform fee and unit cost', () => {
+    const daily = aggregateDailySales(records, '2026-08-21', '2026-08-23', {
+      unitCostByMenuId: new Map([
+        ['m1', 30],
+        ['m2', 25],
+      ]),
+      platformFeePercent: 10,
+    })
+    // day 1: revenue 230, fee 23, cost 2*30 + 25 = 85
+    expect(daily[0].profit).toBeCloseTo(230 - 23 - 85)
+    expect(daily[1].profit).toBe(0)
+    // day 3: revenue 320, fee 32, cost 120
+    expect(daily[2].profit).toBeCloseTo(320 - 32 - 120)
+  })
+
+  it('reports zero profit when no cost data is given', () => {
+    expect(aggregateDailySales(records, '2026-08-21', '2026-08-21')[0].profit).toBe(0)
+  })
 })
 
 describe('aggregateTopMenus', () => {
