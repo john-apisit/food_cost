@@ -34,6 +34,8 @@ const padThai: MenuItem = {
 function sale(partial: Partial<SalesRecord> & Pick<SalesRecord, 'id' | 'saleDate' | 'actualQty' | 'menuItemId'>): SalesRecord {
   return {
     userId: 'u1',
+    promoQty: 0,
+    promoRevenue: 0,
     recordedAt: `${partial.saleDate}T10:00:00.000Z`,
     ...partial,
   }
@@ -141,6 +143,24 @@ describe('summarizeSales', () => {
     expect(summary.hasTarget).toBe(true)
     expect(summary.targetPercent).toBeCloseTo(80)
     expect(summary.topMenuName).toBe('กะเพราหมูสับ')
+  })
+
+  it('counts promo pieces at the promo price instead of the menu price', () => {
+    // 10 pieces at 80: 6 sold as 2 × "3 for 150", 4 at normal price
+    const summary = summarizeSales([
+      sale({
+        id: 's1',
+        saleDate: '2026-08-21',
+        menuItemId: 'm1',
+        actualQty: 10,
+        promoQty: 6,
+        promoRevenue: 300,
+        menuItem: basil,
+      }),
+    ])
+
+    expect(summary.revenue).toBe(4 * 80 + 300)
+    expect(summary.actualQty).toBe(10)
   })
 
   it('returns a null target percent when no target exists', () => {

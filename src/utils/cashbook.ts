@@ -1,3 +1,4 @@
+import { salesRevenue } from './salesPromo'
 import {
   CASH_CATEGORIES_BY_TYPE,
   CASH_CATEGORY_LABELS,
@@ -85,11 +86,26 @@ export interface PlatformPayoutEstimate {
 }
 
 export function estimatePlatformPayout(
-  lines: Array<{ actualQty: number; sellingPrice: number }>,
+  lines: Array<{
+    actualQty: number
+    sellingPrice: number
+    promoQty?: number
+    promoRevenue?: number
+  }>,
   platformFeePercent: number,
 ): PlatformPayoutEstimate {
   const qty = lines.reduce((sum, line) => sum + Math.max(0, line.actualQty), 0)
-  const gross = lines.reduce((sum, line) => sum + Math.max(0, line.actualQty) * Math.max(0, line.sellingPrice), 0)
+  const gross = lines.reduce(
+    (sum, line) =>
+      sum +
+      salesRevenue({
+        qty: line.actualQty,
+        unitPrice: line.sellingPrice,
+        promoQty: line.promoQty,
+        promoRevenue: line.promoRevenue,
+      }),
+    0,
+  )
   const feeRate = Number.isFinite(platformFeePercent) ? platformFeePercent / 100 : 0
   const fee = gross * feeRate
   return { qty, gross, fee, net: gross - fee }

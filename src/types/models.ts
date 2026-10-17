@@ -420,7 +420,13 @@ export interface SalesRecord {
   planId?: string
   menuItemId: string
   targetQty?: number
+  /** Total pieces sold (includes promo pieces). */
   actualQty: number
+  /** Pieces sold under a promotion (subset of actualQty). */
+  promoQty: number
+  /** Total money received for the promo pieces. */
+  promoRevenue: number
+  promoNote?: string
   saleDate: string
   recordedAt: string
   menuItem?: MenuItem

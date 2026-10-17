@@ -73,6 +73,9 @@ export function useSalesRecords() {
       targetQty?: number
       planId?: string
       saleDate: string
+      promoQty?: number
+      promoRevenue?: number
+      promoNote?: string | null
     }>,
   ) => {
     if (!user.value || !currentStoreId.value || payloads.length === 0) return
@@ -88,6 +91,9 @@ export function useSalesRecords() {
           actual_qty: payload.actualQty,
           target_qty: payload.targetQty ?? null,
           plan_id: payload.planId ?? null,
+          promo_qty: payload.promoQty ?? 0,
+          promo_revenue: payload.promoQty ? (payload.promoRevenue ?? 0) : 0,
+          promo_note: payload.promoQty ? (payload.promoNote ?? null) : null,
           sale_date: payload.saleDate,
         })),
       )

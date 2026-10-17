@@ -1,5 +1,6 @@
 import type { SalesRecord } from '@/types/models'
 import { formatNumber, parseLocalDate, toDateInputValue } from './format'
+import { salesRevenue } from './salesPromo'
 
 export const SALES_CHART_MAX_DAYS = 30
 export const SALES_CHART_PRESETS = [7, 14, 30] as const
@@ -84,7 +85,12 @@ export function recordUnitPrice(record: SalesRecord): number {
 }
 
 export function recordRevenue(record: SalesRecord): number {
-  return record.actualQty * recordUnitPrice(record)
+  return salesRevenue({
+    qty: record.actualQty,
+    unitPrice: recordUnitPrice(record),
+    promoQty: record.promoQty,
+    promoRevenue: record.promoRevenue,
+  })
 }
 
 export function recordTargetRevenue(record: SalesRecord): number {

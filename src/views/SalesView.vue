@@ -55,25 +55,81 @@
               </tr>
             </thead>
             <tbody class="divide-y">
-              <tr v-for="entry in entries" :key="entry.id">
-                <td class="py-3 pr-4">
-                  <p class="font-medium text-gray-900">{{ entry.menuName }}</p>
-                  <p v-if="entry.unitLabel" class="text-xs text-gray-500">{{ entry.unitLabel }}</p>
-                </td>
-                <td class="py-3 px-4 text-right text-gray-700">{{ entry.targetQty }}</td>
-                <td class="py-3 pl-4">
-                  <input
-                    v-model.number="entry.actualQty"
-                    type="number"
-                    min="0"
-                    required
-                    class="input-field w-24 ml-auto text-right"
-                  />
-                </td>
-                <td class="hidden sm:table-cell py-3 pl-4 text-right" :class="entryVarianceClass(entry)">
-                  {{ entryVariance(entry) }}
-                </td>
-              </tr>
+              <template v-for="entry in entries" :key="entry.id">
+                <tr>
+                  <td class="py-3 pr-4">
+                    <p class="font-medium text-gray-900">{{ entry.menuName }}</p>
+                    <p v-if="entry.unitLabel" class="text-xs text-gray-500">
+                      {{ entry.unitLabel }} · ราคาปกติ {{ formatCurrency(entry.sellingPrice) }}
+                    </p>
+                    <button
+                      type="button"
+                      class="mt-1 text-xs font-medium text-primary-600 hover:text-primary-700"
+                      @click="entry.promoOpen = !entry.promoOpen"
+                    >
+                      {{ entry.promoOpen ? '− ยกเลิกโปรโมชั่น' : '+ ขายแบบโปรโมชั่น' }}
+                    </button>
+                  </td>
+                  <td class="py-3 px-4 text-right text-gray-700">{{ entry.targetQty }}</td>
+                  <td class="py-3 pl-4">
+                    <input
+                      v-model.number="entry.actualQty"
+                      type="number"
+                      min="0"
+                      required
+                      class="input-field w-24 ml-auto text-right"
+                    />
+                  </td>
+                  <td class="hidden sm:table-cell py-3 pl-4 text-right" :class="entryVarianceClass(entry)">
+                    {{ entryVariance(entry) }}
+                  </td>
+                </tr>
+                <tr v-if="entry.promoOpen">
+                  <td colspan="4" class="pb-4 pt-0">
+                    <div class="rounded-lg bg-amber-50 border border-amber-100 p-3 space-y-3">
+                      <p class="text-xs text-amber-800">
+                        ยอดจริงด้านบนคือจำนวนรวมทุกชิ้น (รวมที่ขายโปร) ส่วนโปรโมชั่นกรอกเป็นชุด เช่น ซื้อ 3 ชิ้น 50 บาท
+                      </p>
+                      <div class="flex flex-wrap items-center gap-2 text-sm text-gray-700">
+                        <span>ซื้อ</span>
+                        <input
+                          v-model.number="entry.bundleSize"
+                          type="number"
+                          min="1"
+                          step="1"
+                          placeholder="3"
+                          class="input-field w-20 text-right"
+                        />
+                        <span>ชิ้น ราคา</span>
+                        <input
+                          v-model.number="entry.bundlePrice"
+                          type="number"
+                          min="0"
+                          step="any"
+                          placeholder="50"
+                          class="input-field w-24 text-right"
+                        />
+                        <span>บาท ขายได้</span>
+                        <input
+                          v-model.number="entry.bundleCount"
+                          type="number"
+                          min="0"
+                          step="1"
+                          placeholder="0"
+                          class="input-field w-20 text-right"
+                        />
+                        <span>ชุด</span>
+                      </div>
+                      <p v-if="promoError(entry)" class="text-xs text-red-600">{{ promoError(entry) }}</p>
+                      <p v-else-if="entryPromo(entry).qty > 0" class="text-xs text-gray-600">
+                        โปร {{ entryPromo(entry).qty }} ชิ้น = {{ formatCurrency(entryPromo(entry).revenue) }}
+                        · ขายปกติ {{ Number(entry.actualQty) - entryPromo(entry).qty }} ชิ้น
+                        · <span class="font-medium text-gray-900">รวมรายได้ {{ formatCurrency(entryRevenue(entry)) }}</span>
+                      </p>
+                    </div>
+                  </td>
+                </tr>
+              </template>
             </tbody>
           </table>
         </div>
@@ -118,6 +174,7 @@
                 <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">เป้า</th>
                 <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">จริง</th>
                 <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">ผลต่าง</th>
+                <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">รายได้</th>
                 <th class="px-4 py-3"></th>
               </tr>
             </thead>
@@ -125,12 +182,18 @@
               <tr v-for="row in records" :key="row.id">
                 <td class="px-4 py-3">{{ formatDateOnly(row.saleDate) }}</td>
                 <td class="px-4 py-3">{{ planNameById(row.planId) }}</td>
-                <td class="px-4 py-3">{{ row.menuItem?.name || row.menuItemId }}</td>
+                <td class="px-4 py-3">
+                  <p>{{ row.menuItem?.name || row.menuItemId }}</p>
+                  <p v-if="row.promoQty > 0" class="text-xs text-amber-700">
+                    โปร: {{ row.promoNote || `${row.promoQty} ชิ้น` }} ({{ row.promoQty }} ชิ้น)
+                  </p>
+                </td>
                 <td class="px-4 py-3 text-right">{{ row.targetQty ?? '-' }}</td>
                 <td class="px-4 py-3 text-right font-medium">{{ row.actualQty }}</td>
                 <td class="px-4 py-3 text-right" :class="varianceClass(row)">
                   {{ variance(row) }}
                 </td>
+                <td class="px-4 py-3 text-right">{{ formatCurrency(recordRevenue(row)) }}</td>
                 <td class="px-4 py-3 text-right">
                   <button type="button" class="text-red-600 text-sm" @click="remove(row.id)">ลบ</button>
                 </td>
@@ -157,12 +220,15 @@ import { usePurchasePlans } from '@/composables/usePurchasePlans'
 import { useSalesRecords } from '@/composables/useSalesRecords'
 import { useToast } from '@/composables/useToast'
 import {
+  formatCurrency,
   formatDateOnly,
   formatSaleDateRange,
   normalizeDateRange,
   saleUnitLabel,
   toDateInputValue,
 } from '@/utils/format'
+import { recordRevenue } from '@/utils/salesChart'
+import { resolvePromo, salesRevenue } from '@/utils/salesPromo'
 import type { PurchasePlan, SalesRecord } from '@/types/models'
 
 type SaleEntry = {
@@ -170,8 +236,13 @@ type SaleEntry = {
   menuItemId: string
   menuName: string
   unitLabel: string
+  sellingPrice: number
   targetQty: number
   actualQty: number | null
+  promoOpen: boolean
+  bundleSize: number | null
+  bundlePrice: number | null
+  bundleCount: number | null
 }
 
 const { plans, fetchPlans } = usePurchasePlans()
@@ -212,12 +283,42 @@ const emptyDescription = computed(() =>
   latestSaleDate.value ? 'ลองเปลี่ยนช่วงวันที่เพื่อดูย้อนหลัง' : undefined,
 )
 
+// Promo only counts while its section is open; closing it discards the values.
+const entryPromo = (entry: SaleEntry) =>
+  entry.promoOpen
+    ? resolvePromo({
+        bundleSize: entry.bundleSize,
+        bundlePrice: entry.bundlePrice,
+        bundleCount: entry.bundleCount,
+      })
+    : { qty: 0, revenue: 0, note: null }
+
+const promoError = (entry: SaleEntry): string => {
+  if (!entry.promoOpen) return ''
+  const count = Number(entry.bundleCount) || 0
+  if (count <= 0) return ''
+  if (!(Number(entry.bundleSize) >= 1)) return 'กรอกจำนวนชิ้นต่อชุด'
+  if (typeof entry.bundlePrice !== 'number' || !(entry.bundlePrice >= 0)) return 'กรอกราคาโปรโมชั่น'
+  if (Number.isFinite(entry.actualQty) && entryPromo(entry).qty > Number(entry.actualQty)) {
+    return `ขายโปร ${entryPromo(entry).qty} ชิ้น มากกว่ายอดจริงรวม ${entry.actualQty} ชิ้น`
+  }
+  return ''
+}
+
+const entryRevenue = (entry: SaleEntry) =>
+  salesRevenue({
+    qty: Number(entry.actualQty) || 0,
+    unitPrice: entry.sellingPrice,
+    promoQty: entryPromo(entry).qty,
+    promoRevenue: entryPromo(entry).revenue,
+  })
+
 const canSave = computed(
   () =>
     Boolean(selectedPlanId.value) &&
     Boolean(saleDate.value) &&
     entries.value.length > 0 &&
-    entries.value.every((entry) => Number.isFinite(entry.actualQty)),
+    entries.value.every((entry) => Number.isFinite(entry.actualQty) && !promoError(entry)),
 )
 
 const saleRangeLabel = (plan: PurchasePlan) =>
@@ -250,8 +351,13 @@ const entriesFromPlan = (plan?: PurchasePlan): SaleEntry[] =>
       menuItemId: line.menuItemId,
       menuName: line.menuItem?.name || line.menuItemId,
       unitLabel: line.menuItem ? saleUnitLabel(line.menuItem.saleUnitType) : '',
+      sellingPrice: line.menuItem?.sellingPrice ?? 0,
       targetQty: line.targetQuantity,
       actualQty: null,
+      promoOpen: false,
+      bundleSize: null,
+      bundlePrice: null,
+      bundleCount: null,
     }))
 
 watch(
@@ -295,13 +401,19 @@ const save = async () => {
   const savedSaleDate = saleDate.value
   try {
     await createRecords(
-      entries.value.map((entry) => ({
-        saleDate: saleDate.value,
-        menuItemId: entry.menuItemId,
-        actualQty: Number(entry.actualQty),
-        targetQty: entry.targetQty,
-        planId: selectedPlanId.value,
-      })),
+      entries.value.map((entry) => {
+        const promo = entryPromo(entry)
+        return {
+          saleDate: saleDate.value,
+          menuItemId: entry.menuItemId,
+          actualQty: Number(entry.actualQty),
+          targetQty: entry.targetQty,
+          planId: selectedPlanId.value,
+          promoQty: promo.qty,
+          promoRevenue: promo.revenue,
+          promoNote: promo.note,
+        }
+      }),
     )
     success('บันทึกยอดขายแล้ว')
     resetForm()

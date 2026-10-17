@@ -63,6 +63,16 @@ describe('estimatePlatformPayout', () => {
   })
 })
 
+describe('estimatePlatformPayout with promotions', () => {
+  it('uses the promo total for promo pieces', () => {
+    const estimate = estimatePlatformPayout(
+      [{ actualQty: 10, sellingPrice: 20, promoQty: 6, promoRevenue: 100 }],
+      30,
+    )
+    expect(estimate).toEqual({ qty: 10, gross: 180, fee: 54, net: 126 })
+  })
+})
+
 describe('payoutVariance', () => {
   it('treats a small difference as a match', () => {
     expect(payoutVariance(910, 900).status).toBe('match')

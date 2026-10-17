@@ -128,7 +128,7 @@ export function useCashEntries() {
 
     const { data, error: fetchError } = await supabase
       .from('sales_records')
-      .select('actual_qty, menu_item:menu_items (selling_price)')
+      .select('actual_qty, promo_qty, promo_revenue, menu_item:menu_items (selling_price)')
       .eq('store_id', currentStoreId.value)
       .gte('sale_date', range.from)
       .lte('sale_date', range.to)
@@ -138,12 +138,16 @@ export function useCashEntries() {
     const lines = (data || []).map((row) => {
       const record = row as {
         actual_qty: number
+        promo_qty?: number
+        promo_revenue?: number
         menu_item?: { selling_price?: number } | { selling_price?: number }[] | null
       }
       const menu = Array.isArray(record.menu_item) ? record.menu_item[0] : record.menu_item
       return {
         actualQty: Number(record.actual_qty) || 0,
         sellingPrice: Number(menu?.selling_price) || 0,
+        promoQty: Number(record.promo_qty) || 0,
+        promoRevenue: Number(record.promo_revenue) || 0,
       }
     })
 

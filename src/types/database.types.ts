@@ -435,6 +435,9 @@ export interface Database {
           menu_item_id: string
           target_qty: number | null
           actual_qty: number
+          promo_qty: number
+          promo_revenue: number
+          promo_note: string | null
           sale_date: string
           recorded_at: string
         }
@@ -446,6 +449,9 @@ export interface Database {
           menu_item_id: string
           target_qty?: number | null
           actual_qty: number
+          promo_qty?: number
+          promo_revenue?: number
+          promo_note?: string | null
           sale_date?: string
           recorded_at?: string
         }
@@ -457,6 +463,9 @@ export interface Database {
           menu_item_id?: string
           target_qty?: number | null
           actual_qty?: number
+          promo_qty?: number
+          promo_revenue?: number
+          promo_note?: string | null
           sale_date?: string
           recorded_at?: string
         }
