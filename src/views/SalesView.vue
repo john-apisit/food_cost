@@ -65,7 +65,7 @@
                     <button
                       type="button"
                       class="mt-1 text-xs font-medium text-primary-600 hover:text-primary-700"
-                      @click="entry.promoOpen = !entry.promoOpen"
+                      @click="togglePromo(entry)"
                     >
                       {{ entry.promoOpen ? '− ยกเลิกโปรโมชั่น' : '+ ขายแบบโปรโมชั่น' }}
                     </button>
@@ -89,11 +89,17 @@
                     <div class="rounded-lg bg-amber-50 border border-amber-100 p-3 space-y-3">
                       <p class="text-xs text-amber-800">
                         ยอดจริงด้านบนคือจำนวนรวมทุกชิ้น (รวมที่ขายโปร) ส่วนโปรโมชั่นกรอกเป็นชุด เช่น ซื้อ 3 ชิ้น 50 บาท
+                        เพิ่มได้หลายโปรในวันเดียวกัน
                       </p>
-                      <div class="flex flex-wrap items-center gap-2 text-sm text-gray-700">
+                      <div
+                        v-for="(promo, promoIndex) in entry.promos"
+                        :key="promo.key"
+                        class="flex flex-wrap items-center gap-2 text-sm text-gray-700"
+                      >
+                        <span class="w-12 text-xs font-medium text-amber-800">โปร {{ promoIndex + 1 }}</span>
                         <span>ซื้อ</span>
                         <input
-                          v-model.number="entry.bundleSize"
+                          v-model.number="promo.bundleSize"
                           type="number"
                           min="1"
                           step="1"
@@ -102,7 +108,7 @@
                         />
                         <span>ชิ้น ราคา</span>
                         <input
-                          v-model.number="entry.bundlePrice"
+                          v-model.number="promo.bundlePrice"
                           type="number"
                           min="0"
                           step="any"
@@ -111,7 +117,7 @@
                         />
                         <span>บาท ขายได้</span>
                         <input
-                          v-model.number="entry.bundleCount"
+                          v-model.number="promo.bundleCount"
                           type="number"
                           min="0"
                           step="1"
@@ -119,7 +125,21 @@
                           class="input-field w-20 text-right"
                         />
                         <span>ชุด</span>
+                        <button
+                          type="button"
+                          class="text-xs text-red-600 hover:text-red-700"
+                          @click="removePromo(entry, promoIndex)"
+                        >
+                          ลบ
+                        </button>
                       </div>
+                      <button
+                        type="button"
+                        class="text-xs font-medium text-primary-600 hover:text-primary-700"
+                        @click="addPromo(entry)"
+                      >
+                        + เพิ่มโปรโมชั่น
+                      </button>
                       <p v-if="promoError(entry)" class="text-xs text-red-600">{{ promoError(entry) }}</p>
                       <p v-else-if="entryPromo(entry).qty > 0" class="text-xs text-gray-600">
                         โปร {{ entryPromo(entry).qty }} ชิ้น = {{ formatCurrency(entryPromo(entry).revenue) }}
@@ -317,13 +337,28 @@ import {
   toDateInputValue,
 } from '@/utils/format'
 import { recordRevenue, shiftIsoDate } from '@/utils/salesChart'
-import { resolvePromo, salesRevenue } from '@/utils/salesPromo'
+import { resolvePromos, salesRevenue } from '@/utils/salesPromo'
 import {
   recordProfit,
   summarizeProfit,
   type CostFallback,
 } from '@/utils/salesProfit'
 import type { PurchasePlan, SalesRecord } from '@/types/models'
+
+type PromoDraft = {
+  key: number
+  bundleSize: number | null
+  bundlePrice: number | null
+  bundleCount: number | null
+}
+
+let promoKeySeq = 0
+const newPromoDraft = (): PromoDraft => ({
+  key: ++promoKeySeq,
+  bundleSize: null,
+  bundlePrice: null,
+  bundleCount: null,
+})
 
 type SaleEntry = {
   id: string
@@ -334,9 +369,7 @@ type SaleEntry = {
   targetQty: number
   actualQty: number | null
   promoOpen: boolean
-  bundleSize: number | null
-  bundlePrice: number | null
-  bundleCount: number | null
+  promos: PromoDraft[]
 }
 
 const { plans, fetchPlans } = usePurchasePlans()
@@ -420,20 +453,33 @@ const emptyDescription = computed(() =>
 
 // Promo only counts while its section is open; closing it discards the values.
 const entryPromo = (entry: SaleEntry) =>
-  entry.promoOpen
-    ? resolvePromo({
-        bundleSize: entry.bundleSize,
-        bundlePrice: entry.bundlePrice,
-        bundleCount: entry.bundleCount,
-      })
-    : { qty: 0, revenue: 0, note: null }
+  entry.promoOpen ? resolvePromos(entry.promos) : { qty: 0, revenue: 0, note: null }
+
+const togglePromo = (entry: SaleEntry) => {
+  entry.promoOpen = !entry.promoOpen
+  entry.promos = entry.promoOpen ? [newPromoDraft()] : []
+}
+
+const addPromo = (entry: SaleEntry) => {
+  entry.promos.push(newPromoDraft())
+}
+
+const removePromo = (entry: SaleEntry, index: number) => {
+  entry.promos.splice(index, 1)
+  if (entry.promos.length === 0) entry.promoOpen = false
+}
 
 const promoError = (entry: SaleEntry): string => {
   if (!entry.promoOpen) return ''
-  const count = Number(entry.bundleCount) || 0
-  if (count <= 0) return ''
-  if (!(Number(entry.bundleSize) >= 1)) return 'กรอกจำนวนชิ้นต่อชุด'
-  if (typeof entry.bundlePrice !== 'number' || !(entry.bundlePrice >= 0)) return 'กรอกราคาโปรโมชั่น'
+  for (const [index, promo] of entry.promos.entries()) {
+    const count = Number(promo.bundleCount) || 0
+    if (count <= 0) continue
+    const label = entry.promos.length > 1 ? `โปร ${index + 1}: ` : ''
+    if (!(Number(promo.bundleSize) >= 1)) return `${label}กรอกจำนวนชิ้นต่อชุด`
+    if (typeof promo.bundlePrice !== 'number' || !(promo.bundlePrice >= 0)) {
+      return `${label}กรอกราคาโปรโมชั่น`
+    }
+  }
   if (Number.isFinite(entry.actualQty) && entryPromo(entry).qty > Number(entry.actualQty)) {
     return `ขายโปร ${entryPromo(entry).qty} ชิ้น มากกว่ายอดจริงรวม ${entry.actualQty} ชิ้น`
   }
@@ -490,9 +536,7 @@ const entriesFromPlan = (plan?: PurchasePlan): SaleEntry[] =>
       targetQty: line.targetQuantity,
       actualQty: null,
       promoOpen: false,
-      bundleSize: null,
-      bundlePrice: null,
-      bundleCount: null,
+      promos: [],
     }))
 
 watch(

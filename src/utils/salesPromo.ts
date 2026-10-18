@@ -37,6 +37,17 @@ export function resolvePromo(input: PromoInput): PromoResult {
   }
 }
 
+/** Combine several promotions sold on the same menu/day into one total (pieces, revenue, joined note). */
+export function resolvePromos(inputs: PromoInput[]): PromoResult {
+  const results = inputs.map(resolvePromo).filter((result) => result.qty > 0)
+  if (results.length === 0) return { qty: 0, revenue: 0, note: null }
+  return {
+    qty: results.reduce((sum, result) => sum + result.qty, 0),
+    revenue: results.reduce((sum, result) => sum + result.revenue, 0),
+    note: results.map((result) => result.note).join(' + '),
+  }
+}
+
 /**
  * Revenue for a sales record. Promo pieces are paid at the promo total,
  * the remaining pieces at the normal menu price.

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { resolvePromo, salesRevenue } from './salesPromo'
+import { resolvePromo, resolvePromos, salesRevenue } from './salesPromo'
 
 describe('resolvePromo', () => {
   it('converts bundles into pieces and revenue', () => {
@@ -15,6 +15,26 @@ describe('resolvePromo', () => {
     expect(resolvePromo({ bundleSize: 3, bundlePrice: 50, bundleCount: 0 })).toEqual(empty)
     expect(resolvePromo({ bundleSize: null, bundlePrice: 50, bundleCount: 2 })).toEqual(empty)
     expect(resolvePromo({ bundleSize: 3, bundlePrice: 50, bundleCount: null })).toEqual(empty)
+  })
+})
+
+describe('resolvePromos', () => {
+  it('sums several promotions and joins their notes', () => {
+    expect(
+      resolvePromos([
+        { bundleSize: 3, bundlePrice: 50, bundleCount: 2 },
+        { bundleSize: 2, bundlePrice: 30, bundleCount: 1 },
+        { bundleSize: null, bundlePrice: null, bundleCount: null },
+      ]),
+    ).toEqual({
+      qty: 8,
+      revenue: 130,
+      note: 'ซื้อ 3 ชิ้น 50 บาท × 2 ชุด + ซื้อ 2 ชิ้น 30 บาท × 1 ชุด',
+    })
+  })
+
+  it('returns an empty promo for an empty list', () => {
+    expect(resolvePromos([])).toEqual({ qty: 0, revenue: 0, note: null })
   })
 })
 
